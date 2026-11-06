@@ -16,12 +16,15 @@ export async function POST(request: Request) {
     return Response.json({ error: "amount (decimal string) is required" }, { status: 400 });
   }
 
+  // Validate the database client before creating an external checkout, so a
+  // bad deployment cannot leave an untracked Velo payment intent behind.
+  const db = supabaseServer();
   const session = await veloService().createTopUpSession(amount, {
     successUrl: `${env.appUrl}/fund/success`,
     cancelUrl: `${env.appUrl}/fund/cancel`,
   });
 
-  const res = await supabaseServer().from("funding_requests").insert({
+  const res = await db.from("funding_requests").insert({
     payout_id: null,
     payment_intent_id: session.paymentIntentId,
     checkout_url: session.checkoutUrl,

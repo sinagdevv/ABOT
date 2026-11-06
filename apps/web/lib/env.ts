@@ -1,6 +1,9 @@
 function required(name: string): string {
-  const value = process.env[name];
+  const value = process.env[name]?.trim();
   if (!value) throw new Error(`Missing required env var: ${name}`);
+  if (/replace_with|xxxx\.supabase\.co|tk_test_replace_me/i.test(value)) {
+    throw new Error(`Placeholder value is not allowed for env var: ${name}`);
+  }
   return value;
 }
 

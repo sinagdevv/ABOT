@@ -132,7 +132,7 @@ docs/{testnet-evidence,demo-script,pitch}.md
 
 ```bash
 npm install
-cp .env.example .env.local   # fill in Supabase, Velo, and agent values
+cp .env.example apps/web/.env.local   # fill in real Supabase, Velo, and agent values
 npx supabase start           # local Postgres via Docker; apply 0001_init.sql
 npm run test                 # vitest — engine + idempotency + money, no network
 npm run dev -w apps/web      # http://localhost:3000

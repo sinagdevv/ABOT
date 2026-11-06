@@ -21,16 +21,19 @@ export class VeloService {
       amount: fromStroops(payout.amountStroops),
       description: `ABOT escrow top-up for payout ${payout.id} (${payout.recipientName})`,
       idempotencyKey: `fund:${payout.id}`,
+      correlationId: `payout:${payout.id}`,
       urls,
     });
   }
 
   /** General, not-tied-to-one-payout top-up of the org's operating balance. */
   async createTopUpSession(amountDecimal: string, urls: { successUrl: string; cancelUrl: string }) {
+    const requestId = `topup:${amountDecimal}:${Date.now()}`;
     return this.createCheckoutSession({
       amount: amountDecimal,
       description: "ABOT operating balance top-up",
-      idempotencyKey: `topup:${amountDecimal}:${Date.now()}`,
+      idempotencyKey: requestId,
+      correlationId: requestId,
       urls,
     });
   }
@@ -39,6 +42,7 @@ export class VeloService {
     amount: string;
     description: string;
     idempotencyKey: string;
+    correlationId: string;
     urls: { successUrl: string; cancelUrl: string };
   }) {
     return this.velo.checkout.sessions.create(
@@ -48,8 +52,9 @@ export class VeloService {
         description: params.description,
         successUrl: params.urls.successUrl,
         cancelUrl: params.urls.cancelUrl,
+        anchor: "inhouse",
       },
-      { idempotencyKey: params.idempotencyKey },
+      { idempotencyKey: params.idempotencyKey, correlationId: params.correlationId },
     );
   }
 
