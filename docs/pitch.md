@@ -40,10 +40,12 @@ twice.
 A live Testnet run of the entire Noir lifecycle (register, fund, authorize,
 claim) with confirmed, independently verifiable transaction hashes — see
 `docs/testnet-evidence.md`. The decision engine, state machine, and
-duplicate-payment protection are unit-tested. The five screens are built
-and functional end-to-end against a local/dev stack.
+duplicate-payment protection are unit-tested. The operator screens, read-only
+DEMO MODE, server-side admin session bridge, and wallet-signed claim boundary
+are built. Hosted Supabase/Vercel runtime proof remains blocked by missing real
+deployment configuration.
 
 ## What's next
-A funded Velo project key and a hosted Supabase project turn this from a
-verified local build into a public, running demo — the code and schema are
-already there to support it (see README → Blockers).
+A linked Vercel project plus real Supabase, Noir, Velo, and admin configuration
+turn this from a verified local build into a public, running demo — the code and
+schema are already there to support it (see README → Blockers).

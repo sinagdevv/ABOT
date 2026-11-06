@@ -11,10 +11,11 @@ evaluates → funds if short → authorizes on-chain → recipient claims. "Ever
 one of these is a real contract call or a signed API request — nothing here
 is simulated."
 
-**0:35–1:05 — Create and run a payout**
-On `/payouts`, create a payout (recipient, amount, due date). Switch to
-`/dashboard`, click **Run agent sweep**. Point out the status flipping from
-`pending` to `authorized`, and the transaction hash appearing in the queue.
+**0:35–1:05 — Show the operator surface**
+Open `/dashboard` in the clearly labeled read-only DEMO MODE. Walk through
+approved, authorized, claimed, needs-funding, and manual-review states. For a
+live recording only, connect the short-lived admin session first, then create a
+payout on `/payouts` and run the secured agent sweep.
 
 **1:05–1:25 — Show the refusal path**
 Create a second payout that exceeds the agent's policy cap (or predates
@@ -32,3 +33,14 @@ ABOT's balance; funding the Noir escrow is a distinct, audited step.
 Pull up `docs/testnet-evidence.md` (or Stellar Expert) and show a real,
 confirmed transaction hash from this exact flow. "Making every peso reach
 its purpose — and proving it, on-chain, every time."
+
+## Recording checklist
+
+- Use DEMO MODE unless real Supabase, Noir, Velo, and admin configuration has
+  been validated beforehand.
+- Never show or paste `.env.local`, service-role keys, agent secrets, Velo
+  secrets, or recipient private keys.
+- Keep the Testnet label visible; XLM shown is not Philippine pesos.
+- If showing live admin actions, capture the session boundary, payout status,
+  agent activity, and the exact returned transaction reference.
+- Keep Velo paid status and Noir escrow funding visibly separate.

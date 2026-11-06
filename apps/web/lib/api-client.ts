@@ -1,6 +1,6 @@
 "use client";
 
-const TOKEN_KEY = "abot_admin_token";
+const SESSION_KEY = "abot_admin_session";
 
 let demoPayouts = [
   { id: "payout-demo-01", status: "authorized", amountStroops: "125000000", asset: "XLM", recipientName: "Maya Santos", recipientAddress: "GDEMO7MAYA7SANTOS7RECIPIENT7ADDRESS7TESTNET", dueAt: "2026-11-07T04:30:00.000Z", failureReason: null, authorizationTxHash: "demo-auth-8af1", claimTxHash: null },
@@ -15,17 +15,20 @@ const demoDecisions = [
   { id: "decision-03", payout_id: "payout-demo-01", action: "authorized", reason: "Policy passed and nonce was reserved.", detail: { network: "Stellar Testnet" }, created_at: "2026-11-07T03:10:00.000Z" },
 ];
 
-export function getAdminToken(): string {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem(TOKEN_KEY) ?? "";
+export async function setAdminToken(token: string) {
+  const res = await fetch("/api/admin/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }), credentials: "same-origin" });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "invalid admin token");
+  window.sessionStorage.setItem(SESSION_KEY, "1");
 }
 
-export function setAdminToken(token: string) {
-  window.localStorage.setItem(TOKEN_KEY, token);
+export async function clearAdminSession() {
+  await fetch("/api/admin/session", { method: "DELETE", credentials: "same-origin" });
+  window.sessionStorage.removeItem(SESSION_KEY);
 }
 
 export function isDemoMode() {
-  return !getAdminToken() && process.env.NEXT_PUBLIC_ABOT_DEMO_MODE !== "false";
+  if (typeof window === "undefined") return true;
+  return !window.sessionStorage.getItem(SESSION_KEY) && process.env.NEXT_PUBLIC_ABOT_DEMO_MODE !== "false";
 }
 
 async function demoFetch(path: string, init: RequestInit = {}) {
@@ -53,12 +56,11 @@ async function demoFetch(path: string, init: RequestInit = {}) {
 
 export async function appFetch(path: string, init: RequestInit = {}) {
   if (isDemoMode()) return demoFetch(path, init);
-  const token = getAdminToken();
   const res = await fetch(path, {
     ...init,
+    credentials: "same-origin",
     headers: {
       ...(init.body ? { "Content-Type": "application/json" } : {}),
-      Authorization: `Bearer ${token}`,
       ...init.headers,
     },
   });
@@ -68,5 +70,13 @@ export async function appFetch(path: string, init: RequestInit = {}) {
 }
 
 export async function adminFetch(path: string, init: RequestInit = {}) {
-  return appFetch(path, { ...init, headers: { ...(init.body ? { "Content-Type": "application/json" } : {}), Authorization: `Bearer ${getAdminToken()}`, ...init.headers } });
+  if (isDemoMode()) return demoFetch(path, init);
+  const res = await fetch(`/api/admin/proxy?path=${encodeURIComponent(path)}`, {
+    ...init,
+    credentials: "same-origin",
+    headers: { ...(init.body ? { "Content-Type": "application/json" } : {}), ...init.headers },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error ?? `request failed (${res.status})`);
+  return data;
 }

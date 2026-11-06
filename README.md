@@ -11,12 +11,14 @@ autonomously — funding, authorizing, and auditing every transfer through
 ## Links
 
 - Repo: this one (`feat/abot-hackathon-mvp` branch)
-- Live deployment: **not yet deployed** — this environment has no Vercel/Supabase
-  credentials; see [Blockers](#blockers--whats-left) below.
+- Live deployment: **not yet deployed** — the authenticated Vercel account has
+  no ABOT-linked project, and local Supabase/admin/Noir values are placeholders;
+  see [Blockers](#blockers--whats-left) below.
 - Testnet proof: [`docs/testnet-evidence.md`](docs/testnet-evidence.md) — real,
   confirmed Testnet transaction hashes for the full Noir lifecycle.
 - Demo script / pitch notes: [`docs/demo-script.md`](docs/demo-script.md),
   [`docs/pitch.md`](docs/pitch.md).
+- Architecture: [`docs/architecture.md`](docs/architecture.md).
 
 ## Problem
 
@@ -40,7 +42,8 @@ transaction behind it.
 
 1. **Admin creates an approved payout** — recipient, amount, due date. Stored
    with a deterministic idempotency key so resubmission never double-creates it.
-2. **Agent evaluates due payouts.** On a sweep (manual button or Vercel Cron),
+2. **Agent evaluates due payouts.** On a secured manual sweep (or an external
+   scheduler carrying `CRON_SECRET`), it
    it atomically claims due, unlocked payouts (`FOR UPDATE SKIP LOCKED` — two
    concurrent sweeps can never grab the same one), allocates a stable
    per-device nonce, and asks Noir's own
@@ -71,7 +74,7 @@ npm workspaces monorepo:
 
 ```
 apps/web           Next.js 15 (App Router) — UI + API routes, Supabase client,
-                    auth gate, Noir/Velo service wiring
+                    HttpOnly admin session bridge, Noir/Velo service wiring
 packages/agent      The decision engine: gateway interfaces, Noir/Velo service
                     wrappers, runAgentSweep(), idempotency key derivation
 packages/shared     Types + exact stroops <-> decimal conversion (no floats)
@@ -114,7 +117,15 @@ touching the payload, and dedupes by `x-velo-delivery` against the
 
 Full register → fund → authorize → claim lifecycle run against the live
 2026-10-24 contracts, with confirmed, publicly resolvable transaction hashes:
-see [`docs/testnet-evidence.md`](docs/testnet-evidence.md). Reproduce with
+see [`docs/testnet-evidence.md`](docs/testnet-evidence.md). Direct Horizon links:
+
+- [register device](https://horizon-testnet.stellar.org/transactions/d29ffdde5326e049947520542b6fbba9881f1c0417d246d1f155a761f5f15c1e)
+- [register agent policy](https://horizon-testnet.stellar.org/transactions/67ce08626801293464cb308af8eaad336ea73b848a26ab16e502b3e31a09d4ae)
+- [fund escrow](https://horizon-testnet.stellar.org/transactions/dfac27a134dcb599345be1a7f9fa8d9fc24fc4360340d91eb7391bd803ce3d31)
+- [authorize payment](https://horizon-testnet.stellar.org/transactions/6b752fc1068b5d1d13e73769fdf26f41cd6715f1f3e4d5ab888127e223c212b8)
+- [recipient claim](https://horizon-testnet.stellar.org/transactions/e02ee6557edf0cd35bef37b368922ef901021713341576100a54c61ca200f434)
+
+The evidence uses the real `@noirx402/agent-sdk@0.3.0` Testnet configuration and the same SDK calls used by `packages/agent`. Reproduce with
 `node docs/scripts/testnet-smoke.mjs` against any two Friendbot-funded keys.
 
 ## Repo structure
@@ -132,9 +143,11 @@ docs/{testnet-evidence,demo-script,pitch}.md
 
 ```bash
 npm install
-cp .env.example apps/web/.env.local   # fill in real Supabase, Velo, and agent values
-npx supabase start           # local Postgres via Docker; apply 0001_init.sql
+cp .env.example apps/web/.env.local # fill with real values; never commit it
+npx supabase start           # optional local stack; do not rerun applied remote migrations
 npm run test                 # vitest — engine + idempotency + money, no network
+npm run typecheck
+npm run build
 npm run dev -w apps/web      # http://localhost:3000
 ```
 
@@ -159,12 +172,13 @@ exercised against hosted infrastructure:
   run the migration in `supabase/migrations/0001_init.sql`, and fill in
   `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`.
 - **Velo**: integration code, signed webhook checks, retrieved-intent status
-  verification, and amount/asset correlation are complete, but creating a real
-  checkout session needs a `VELO_API_KEY` from a Velo project dashboard, which
-  this environment doesn't have.
-- **Deploy**: no Vercel token available to `vercel deploy` from here. Repo
-  is ready to deploy as-is (`vercel.json` includes the Cron Job for the
-  agent sweep) once linked to a Vercel project with the env vars above.
+  verification, and amount/asset correlation are complete. The local Velo key
+  is present, but Supabase placeholders prevent the authenticated app route from
+  being exercised; no checkout was created in this release pass.
+- **Deploy**: Vercel CLI authentication is available, but no ABOT project is
+  linked in the account. The Hobby-unsupported 15-minute cron was removed;
+  deploy only after linking a project, adding real env values, and configuring a
+  daily external scheduler or secured manual trigger.
 - **Screenshots**: pending a deployed/running instance to capture from.
 
 The decision engine, state machine, idempotency and concurrency protections,
@@ -173,11 +187,12 @@ and deployment verification remain environment-dependent.
 
 ## Next steps
 
-- Update `/claim/[id]` to obtain a wallet-signed XDR and POST `{ signedTxXdr }`.
+- Connect a real wallet signer to `/claim/[id]` for the unsigned XDR step; the
+  current interface intentionally accepts a manually pasted signed XDR.
 - Map Velo's settled fiat/stablecoin amount to an explicit "ready to fund
   escrow" admin action, rather than leaving that link manual.
-- Replace the single `ADMIN_API_TOKEN` bearer check with Supabase Auth +
-  row-level security once there's a real user base of caseworkers.
+- Replace the token-backed admin session bridge with Supabase Auth + row-level
+  security once there's a real user base of caseworkers.
 
 ## Credits
 

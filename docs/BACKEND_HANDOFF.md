@@ -17,7 +17,7 @@ No database transaction is held across a Noir or Velo call. A worker claim store
 
 `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_API_TOKEN`, `CRON_SECRET`, `AGENT_SECRET`, `AGENT_PUBLIC_KEY`, `ORG_DEVICE_HASH`, `NOIR_RPC_URL`, `VELO_API_KEY`, `VELO_WEBHOOK_SECRET`, `VELO_ENVIRONMENT`, `VELO_BASE_URL`, `VELO_FUNDING_ASSET`, `NEXT_PUBLIC_APP_URL`.
 
-Next/Vercel runs with `apps/web` as the project root, so use `apps/web/.env.local` locally; the repository-root `.env.local` is not loaded by that Next process. Values belong in the provider's secret store for Vercel. Never send `SUPABASE_SERVICE_ROLE_KEY`, `AGENT_SECRET`, `VELO_API_KEY`, or `VELO_WEBHOOK_SECRET` to the browser. Placeholder values are rejected at runtime.
+Next/Vercel runs with `apps/web` as the project root, so use `apps/web/.env.local` locally; the repository-root `.env.local` is not loaded by that Next process. Values belong in the provider's secret store for Vercel. Never send `SUPABASE_SERVICE_ROLE_KEY`, `AGENT_SECRET`, `VELO_API_KEY`, or `VELO_WEBHOOK_SECRET` to the browser. Placeholder values are rejected at runtime. Admin browser access uses a short-lived HttpOnly session cookie that the frontend session bridge exchanges for the existing bearer authorization; the bearer token is not stored in localStorage.
 
 ## Database setup
 

@@ -38,15 +38,15 @@
 
 ## AUTHENTICATION UI STATUS
 
-- Existing bearer-token backend boundary is preserved. The sidebar stores only the admin token locally and provides a reset-to-demo control.
-- `/sign-in` explains the current token integration without pretending Supabase/Auth session state exists.
+- Existing bearer-token backend authorization is preserved behind a short-lived HttpOnly admin session bridge; the browser does not persist `ADMIN_API_TOKEN` in localStorage.
+- `/sign-in` explains the current token-based integration without pretending Supabase/Auth session state exists. Public DEMO MODE is read-only.
 - No private key, recovery phrase, service-role secret, or provider secret is requested by the frontend.
 
 ## DEMO / LIVE DATA BOUNDARIES
 
 - `apps/web/lib/api-client.ts` is the centralized client boundary.
-- No token + `NEXT_PUBLIC_ABOT_DEMO_MODE !== "false"` => deterministic DEMO MODE fixtures, visibly labeled as non-live and non-proof.
-- Admin token present => existing `/api/...` routes are called with bearer authorization.
+- No admin session + `NEXT_PUBLIC_ABOT_DEMO_MODE !== "false"` => deterministic read-only DEMO MODE fixtures, visibly labeled as non-live and non-proof.
+- Admin session present => frontend requests go through the server-side session proxy and existing `/api/...` routes receive bearer authorization.
 - Claim demo responses explicitly say no chain proof; live claim uses the backend's `{ signedTxXdr }` contract.
 
 ## API DEPENDENCY MAP
