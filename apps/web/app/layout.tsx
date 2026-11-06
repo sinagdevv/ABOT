@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "abot. — Making every peso reach its purpose.",
   description:
     "ABOT autonomously processes pre-approved financial assistance through Velo + Noir on Stellar Testnet.",
+  icons: { icon: "/icon.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

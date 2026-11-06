@@ -1,82 +1,26 @@
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Timer, Wallet2 } from "lucide-react";
+import { ArrowDownRight, ArrowRight, CircleDollarSign, LockKeyhole, ShieldCheck, WalletCards } from "lucide-react";
+import { Brand } from "../components/brand";
+import { NetworkScene } from "../components/network-scene";
 
 const STEPS = [
-  { title: "Admin approves", body: "A caseworker creates a payout: recipient, amount, due date. Eligibility is always human-approved." },
-  { title: "Agent evaluates", body: "On its due date, the agent checks the Noir escrow, the authorization policy, and prior transactions — against the contract's own rules." },
-  { title: "Funding, if short", body: "If escrow can't cover it, the agent opens a Velo checkout session for the organization to top up. It never invents a transfer." },
-  { title: "Authorized on-chain", body: "Once policy and funding check out, the agent calls Noir's authorizePayment directly — a real Testnet transaction, not a simulated one." },
-  { title: "Recipient claims", body: "The beneficiary claims their payment through Noir. ABOT shows the transaction hash — never a success state without on-chain proof." },
+  ["01", "Approval", "An operator creates a payout with a recipient, amount, asset, and due date."],
+  ["02", "Evaluation", "The agent checks the Noir policy and escrow balance when the payout is due."],
+  ["03", "Funding", "If escrow is short, ABOT opens a separate Velo request for the organization."],
+  ["04", "Authorization", "A passing check reserves a nonce and authorizes the approved transfer on Testnet."],
+  ["05", "Claim", "The recipient signs an unsigned transaction with their wallet and claims the payout."],
 ];
 
 export default function LandingPage() {
-  return (
-    <div className="bg-warm">
-      <section className="bg-ink px-6 py-24 text-warm">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="mb-4 text-sm font-medium uppercase tracking-[0.2em] text-mint">Civic fintech · Stellar Testnet</p>
-          <h1 className="text-4xl font-semibold tracking-tight md:text-6xl">
-            abot<span className="text-mint">.</span>
-          </h1>
-          <p className="mt-6 text-lg text-mist/90 md:text-xl">Making every peso reach its purpose.</p>
-          <p className="mx-auto mt-4 max-w-xl text-sm text-mist/70">
-            ABOT autonomously processes pre-approved financial assistance through Velo + Noir — a deterministic
-            agent that funds, authorizes, and audits every payout on-chain.
-          </p>
-          <div className="mt-8 flex justify-center gap-3">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2 rounded-lg bg-emerald px-5 py-3 text-sm font-medium text-warm hover:bg-mint hover:text-ink"
-            >
-              Open dashboard <ArrowRight size={16} />
-            </Link>
-            <Link
-              href="/activity"
-              className="flex items-center gap-2 rounded-lg border border-mist/30 px-5 py-3 text-sm font-medium text-warm hover:bg-white/5"
-            >
-              View agent activity
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-5xl px-6 py-20">
-        <h2 className="mb-2 text-center text-2xl font-semibold text-ink">How a payout actually moves</h2>
-        <p className="mb-12 text-center text-sm text-ink/60">
-          Every step below is a real call to a deployed contract or a signed Velo API request — nothing simulated.
-        </p>
-        <ol className="grid gap-6 md:grid-cols-5">
-          {STEPS.map((step, i) => (
-            <li key={step.title} className="rounded-xl2 border border-mist bg-white p-5 shadow-card">
-              <span className="mb-3 flex h-7 w-7 items-center justify-center rounded-full bg-emerald text-xs font-semibold text-warm">
-                {i + 1}
-              </span>
-              <h3 className="mb-1 text-sm font-semibold text-ink">{step.title}</h3>
-              <p className="text-xs text-ink/60">{step.body}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section className="border-t border-mist bg-mist/30 px-6 py-16">
-        <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-3">
-          <Principle icon={ShieldCheck} title="Verified, never assumed" body="A payout only shows as successful once there's a confirmed Testnet transaction hash behind it." />
-          <Principle icon={Timer} title="Autonomous execution" body="The agent decides when to authorize, fund, or hold — deterministically, from on-chain policy, no human in the loop for execution." />
-          <Principle icon={Wallet2} title="Separation of concerns" body="Velo moves fiat-to-stable value into the org's balance. Funding Noir escrow stays a deliberate, separate action." />
-        </div>
-      </section>
-
-      <footer className="px-6 py-8 text-center text-xs text-ink/40">abot. · Built on Stellar Testnet · Noir + Velo</footer>
-    </div>
-  );
-}
-
-function Principle({ icon: Icon, title, body }: { icon: typeof ShieldCheck; title: string; body: string }) {
-  return (
-    <div>
-      <Icon className="mb-3 text-emerald" size={22} />
-      <h3 className="mb-1 text-sm font-semibold text-ink">{title}</h3>
-      <p className="text-xs text-ink/60">{body}</p>
-    </div>
-  );
+  return <main className="overflow-hidden bg-warm text-ink">
+    <section className="grain relative bg-ink text-warm"><div className="hero-grid absolute inset-0 opacity-70" />
+      <nav className="relative mx-auto flex max-w-7xl items-center justify-between px-5 py-5 md:px-8"><Link href="/"><Brand /></Link><div className="hidden items-center gap-7 text-sm text-mist/70 md:flex"><a href="#how-it-works" className="hover:text-warm">How it works</a><a href="#trust" className="hover:text-warm">Trust by design</a><Link href="/help" className="hover:text-warm">Help</Link></div><Link href="/dashboard" className="flex items-center gap-2 rounded-full border border-mist/25 px-4 py-2 text-xs font-medium hover:border-mint hover:text-mint">Explore ABOT <ArrowRight size={14} /></Link></nav>
+      <div className="relative mx-auto grid max-w-7xl items-center gap-6 px-5 pb-12 pt-16 md:grid-cols-[.92fr_1.08fr] md:px-8 md:pb-24 md:pt-20"><div className="max-w-xl"><p className="mb-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-[.2em] text-mint"><span className="h-1.5 w-1.5 rounded-full bg-mint" /> Civic fintech infrastructure</p><h1 className="max-w-[680px] text-[clamp(3.2rem,7vw,6.4rem)] font-semibold leading-[.92] tracking-[-.075em]">Every peso,<br /><span className="text-mint">in motion.</span></h1><p className="mt-7 max-w-lg text-base leading-7 text-mist/72 md:text-lg">ABOT turns approved assistance into an accountable journey — evaluating, funding, authorizing, and helping each recipient claim with confidence.</p><div className="mt-9 flex flex-wrap gap-3"><Link href="/dashboard" className="flex items-center gap-2 rounded-full bg-mint px-5 py-3 text-sm font-semibold text-ink transition-transform hover:-translate-y-0.5">Explore the operations demo <ArrowRight size={16} /></Link><a href="#how-it-works" className="flex items-center gap-2 rounded-full border border-mist/25 px-5 py-3 text-sm text-mist hover:border-mint hover:text-mint">See the journey <ArrowDownRight size={16} /></a></div><div className="mt-12 flex items-center gap-3 text-xs text-mist/50"><span className="flex h-7 w-7 items-center justify-center rounded-full border border-mist/20">↓</span> Scroll to follow a payout</div></div><NetworkScene /></div>
+    </section>
+    <section className="mx-auto max-w-7xl px-5 py-24 md:px-8 md:py-32"><div className="grid gap-12 md:grid-cols-[.8fr_1.2fr]"><div><p className="text-xs font-semibold uppercase tracking-[.2em] text-emerald">The problem</p><h2 className="mt-4 max-w-md text-4xl font-semibold leading-[1.02] tracking-[-.06em] md:text-5xl">Approved is not the same as delivered.</h2></div><div className="max-w-2xl space-y-6 text-lg leading-8 text-ink/65"><p>Assistance often becomes hardest to see after approval. A payout can wait on funding, stall on a policy check, or need a human to resolve an uncertain outcome.</p><p>ABOT gives operators a calm control surface for that in-between: every decision has a reason, every hold has a next step, and every on-chain claim has a record.</p><div className="grid gap-3 pt-3 sm:grid-cols-3">{[["01", "Delayed", "Due payouts wait without visibility."], ["02", "Blocked", "Funding and policy failures look alike."], ["03", "Unclear", "Success needs evidence, not optimism."]].map(([n,t,b]) => <div key={n} className="rounded-2xl border border-mist bg-white p-4"><span className="text-xs font-semibold text-emerald">{n}</span><h3 className="mt-8 text-sm font-semibold">{t}</h3><p className="mt-1 text-xs leading-5 text-ink/55">{b}</p></div>)}</div></div></div></section>
+    <section id="how-it-works" className="bg-ink px-5 py-24 text-warm md:px-8 md:py-32"><div className="mx-auto max-w-7xl"><div className="max-w-xl"><p className="text-xs font-semibold uppercase tracking-[.2em] text-mint">How it works</p><h2 className="mt-4 text-4xl font-semibold leading-[1.02] tracking-[-.06em] md:text-5xl">A deliberate path from approval to arrival.</h2><p className="mt-5 leading-7 text-mist/65">Autonomy handles the repeatable checks. Humans keep the authority to approve, investigate, and intervene.</p></div><div className="mt-16 grid gap-px overflow-hidden rounded-3xl border border-mist/15 bg-mist/15 md:grid-cols-5">{STEPS.map(([n,t,b]) => <div key={n} className="bg-ink p-6 transition-colors hover:bg-emerald/30"><span className="text-xs font-semibold text-mint">{n}</span><h3 className="mt-14 text-lg font-semibold">{t}</h3><p className="mt-3 text-sm leading-6 text-mist/60">{b}</p></div>)}</div></div></section>
+    <section id="trust" className="mx-auto max-w-7xl px-5 py-24 md:px-8 md:py-32"><div className="grid gap-12 md:grid-cols-[.85fr_1.15fr]"><div><p className="text-xs font-semibold uppercase tracking-[.2em] text-emerald">Trust by design</p><h2 className="mt-4 max-w-md text-4xl font-semibold leading-[1.02] tracking-[-.06em] md:text-5xl">Quiet systems are easier to trust.</h2><p className="mt-5 max-w-md leading-7 text-ink/60">ABOT is constrained on purpose. It can evaluate and execute approved work; it cannot invent eligibility or hide an uncertain transaction.</p></div><div className="grid gap-4 sm:grid-cols-2">{[[ShieldCheck,"Constrained permissions","Agent actions follow the approved payout and the Noir policy."],[LockKeyhole,"Duplicate prevention","Stable idempotency keys and leases protect the same payout from double execution."],[CircleDollarSign,"Separated funding","Velo operating balance and Noir escrow funding stay visibly distinct."],[WalletCards,"Wallet-signed claims","Recipients sign in their own wallet. Private keys never cross the app boundary."]].map(([Icon,title,body]) => <div key={String(title)} className="rounded-2xl border border-mist bg-white p-6"><span className="mb-12 flex h-10 w-10 items-center justify-center rounded-xl bg-mint/15 text-emerald"><Icon size={19} /></span><h3 className="font-semibold">{String(title)}</h3><p className="mt-2 text-sm leading-6 text-ink/60">{String(body)}</p></div>)}</div></div></section>
+    <section className="bg-[#e8f2ed] px-5 py-20 md:px-8"><div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-7 rounded-3xl bg-emerald p-8 text-warm md:flex-row md:items-center md:p-12"><div><p className="text-xs font-semibold uppercase tracking-[.18em] text-mint">See the control surface</p><h2 className="mt-3 max-w-xl text-3xl font-semibold tracking-[-.05em] md:text-4xl">Make every decision legible.</h2></div><Link href="/dashboard" className="flex shrink-0 items-center gap-2 rounded-full bg-warm px-5 py-3 text-sm font-semibold text-ink hover:bg-mint">Open ABOT demo <ArrowRight size={16} /></Link></div></section>
+    <footer className="flex flex-col gap-4 bg-ink px-5 py-8 text-xs text-mist/50 md:flex-row md:items-center md:justify-between md:px-8"><Brand /><span>abot. · Making every peso reach its purpose.</span><span>Stellar Testnet · Velo + Noir</span></footer>
+  </main>;
 }

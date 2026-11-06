@@ -1,114 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
 import { fromStroops } from "@abot/shared";
-import { Play, RefreshCw } from "lucide-react";
-import { adminFetch } from "../../../lib/api-client";
+import { ArrowRight, CheckCircle2, CircleAlert, Clock3, Play, RefreshCw, ShieldCheck, WalletCards } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { adminFetch, isDemoMode } from "../../../lib/api-client";
 import { Card, PageHeader } from "../../../components/card";
+import { OnboardingTour } from "../../../components/onboarding-tour";
 import { StatusBadge } from "../../../components/status-badge";
 
-type PayoutRow = { id: string; status: string; amountStroops: string; recipientName: string; dueAt: string };
+type PayoutRow = { id: string; status: string; amountStroops: string; recipientName: string; dueAt: string; authorizationTxHash?: string | null; claimTxHash?: string | null };
 type Decision = { id: string; payout_id: string; action: string; reason: string; created_at: string };
 
 export default function DashboardPage() {
-  const [payouts, setPayouts] = useState<PayoutRow[] | null>(null);
-  const [decisions, setDecisions] = useState<Decision[] | null>(null);
-  const [running, setRunning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function load() {
-    setError(null);
-    try {
-      const [p, d] = await Promise.all([
-        adminFetch("/api/payouts"),
-        adminFetch("/api/agent/activity"),
-      ]);
-      setPayouts(p.payouts);
-      setDecisions(d.decisions.slice(0, 6));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "failed to load");
-    }
-  }
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  async function runSweep() {
-    setRunning(true);
-    setError(null);
-    try {
-      await adminFetch("/api/agent/run", { method: "POST", body: "{}" });
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "sweep failed");
-    } finally {
-      setRunning(false);
-    }
-  }
-
-  const counts = (payouts ?? []).reduce<Record<string, number>>((acc, p) => {
-    acc[p.status] = (acc[p.status] ?? 0) + 1;
-    return acc;
-  }, {});
-  const totalAuthorized = (payouts ?? [])
-    .filter((p) => p.status === "authorized" || p.status === "claimed")
-    .reduce((sum, p) => sum + BigInt(p.amountStroops), 0n);
-
-  return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <PageHeader
-          title="Dashboard"
-          description="Autonomous payout agent — Noir escrow on Stellar Testnet."
-        />
-        <div className="flex gap-2">
-          <button
-            onClick={load}
-            className="flex items-center gap-2 rounded-lg border border-mist px-3 py-2 text-sm text-ink hover:bg-mist/40"
-          >
-            <RefreshCw size={14} /> Refresh
-          </button>
-          <button
-            onClick={runSweep}
-            disabled={running}
-            className="flex items-center gap-2 rounded-lg bg-emerald px-3 py-2 text-sm font-medium text-warm hover:bg-emerald/90 disabled:opacity-50"
-          >
-            <Play size={14} /> {running ? "Running sweep…" : "Run agent sweep"}
-          </button>
-        </div>
-      </div>
-
-      {error && <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>}
-
-      <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-5">
-        {(["pending", "needs_funding", "authorizing", "authorized", "claimed"] as const).map((status) => (
-          <Card key={status}>
-            <p className="text-xs font-medium uppercase tracking-wide text-ink/50">{status.replaceAll("_", " ")}</p>
-            <p className="mt-2 text-2xl font-semibold text-ink">{counts[status] ?? 0}</p>
-          </Card>
-        ))}
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <h2 className="mb-3 text-sm font-semibold text-ink">Value authorized / claimed</h2>
-          <p className="text-3xl font-semibold text-emerald">{fromStroops(totalAuthorized)} XLM</p>
-          <p className="mt-1 text-xs text-ink/50">Sum of payouts the agent has authorized against Noir escrow.</p>
-        </Card>
-        <Card>
-          <h2 className="mb-3 text-sm font-semibold text-ink">Recent agent decisions</h2>
-          <ul className="space-y-2">
-            {(decisions ?? []).map((d) => (
-              <li key={d.id} className="flex items-center justify-between text-sm">
-                <span className="truncate text-ink/70">{d.reason}</span>
-                <StatusBadge status={d.action} />
-              </li>
-            ))}
-            {decisions && decisions.length === 0 && <p className="text-sm text-ink/40">No decisions yet.</p>}
-          </ul>
-        </Card>
-      </div>
+  const [payouts, setPayouts] = useState<PayoutRow[] | null>(null); const [decisions, setDecisions] = useState<Decision[] | null>(null); const [running, setRunning] = useState(false); const [error, setError] = useState<string | null>(null);
+  async function load() { setError(null); try { const [p, d] = await Promise.all([adminFetch("/api/payouts"), adminFetch("/api/agent/activity")]); setPayouts(p.payouts); setDecisions(d.decisions.slice(0, 4)); } catch (err) { setError(err instanceof Error ? err.message : "Unable to load dashboard"); } }
+  useEffect(() => { load(); }, []);
+  async function runSweep() { setRunning(true); try { await adminFetch("/api/agent/run", { method: "POST", body: "{}" }); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Sweep failed"); } finally { setRunning(false); } }
+  const counts = useMemo(() => (payouts ?? []).reduce<Record<string, number>>((acc, p) => { acc[p.status] = (acc[p.status] ?? 0) + 1; return acc; }, {}), [payouts]);
+  const authorized = (payouts ?? []).filter((p) => ["authorized", "claimed"].includes(p.status)).reduce((sum, p) => sum + BigInt(p.amountStroops), 0n);
+  const attention = (payouts ?? []).filter((p) => ["needs_funding", "manual_review", "failed"].includes(p.status));
+  return <div><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><PageHeader title="Good morning, operator." description="A measured view of approved assistance moving through ABOT." /><div className="flex gap-2"><button onClick={load} aria-label="Refresh dashboard" className="flex items-center gap-2 rounded-xl border border-mist bg-white px-3 py-2 text-sm text-ink hover:bg-mist/40"><RefreshCw size={14} /> Refresh</button><button onClick={runSweep} disabled={running} className="flex items-center gap-2 rounded-xl bg-emerald px-3 py-2 text-sm font-semibold text-warm hover:bg-emerald/90 disabled:opacity-50"><Play size={14} /> {running ? "Running…" : "Run sweep"}</button></div></div>
+    {isDemoMode() && <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber/30 bg-amber/10 p-4 text-sm text-ink"><CircleAlert className="mt-0.5 shrink-0 text-amber" size={17} /><p><span className="font-semibold">DEMO MODE.</span> These records are deterministic UI fixtures. They are not live payouts or blockchain proof. Add a live API token in the sidebar to connect.</p></div>}
+    {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>}
+    <div data-tour="metrics" className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4"><Metric label="Approved payouts" value={payouts?.length ?? 0} note="in this workspace" /><Metric label="Ready to claim" value={counts.authorized ?? 0} note="authorized on Testnet" accent /><Metric label="Value in motion" value={`${fromStroops(authorized)} XLM`} note="authorized + claimed" /><Metric label="Needs attention" value={attention.length} note="human review or funding" warn /></div>
+    <div className="grid gap-6 xl:grid-cols-[1.25fr_.75fr]"><Card data-tour="payouts" className="overflow-hidden"><div className="mb-5 flex items-start justify-between"><div><p className="text-xs font-semibold uppercase tracking-[.18em] text-emerald">Payout queue</p><h2 className="mt-1 text-lg font-semibold tracking-[-.03em]">Latest approved assistance</h2></div><Link href="/payouts" className="flex items-center gap-1 text-xs font-semibold text-emerald hover:underline">View queue <ArrowRight size={13} /></Link></div><div className="space-y-1">{(payouts ?? []).slice(0, 4).map((p) => <div key={p.id} className="flex items-center justify-between gap-3 rounded-xl px-2 py-3 transition-colors hover:bg-warm"><div className="min-w-0"><p className="truncate text-sm font-semibold">{p.recipientName}</p><p className="mt-1 text-xs text-ink/45">Due {new Date(p.dueAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })} · {fromStroops(BigInt(p.amountStroops))} XLM</p></div><StatusBadge status={p.status} /></div>)}{payouts?.length === 0 && <Empty text="No approved payouts yet." />}</div></Card>
+      <div className="space-y-6"><Card data-tour="agent"><div className="flex items-start justify-between"><div><p className="text-xs font-semibold uppercase tracking-[.18em] text-emerald">Agent status</p><h2 className="mt-1 text-lg font-semibold">Watching the queue</h2></div><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-mint/15 text-emerald"><ShieldCheck size={18} /></span></div><div className="mt-5 flex items-center gap-3 rounded-xl bg-warm p-3"><span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-mint/20 text-emerald"><span className="absolute h-8 w-8 animate-ping rounded-full bg-mint/20" /><CheckCircle2 size={16} /></span><div><p className="text-sm font-semibold">Policy checks are constrained</p><p className="text-xs text-ink/55">No blind retries · human review available</p></div></div></Card><Card data-tour="funding"><div className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber/15 text-amber"><WalletCards size={18} /></span><div><p className="text-xs font-semibold uppercase tracking-[.18em] text-emerald">Funding</p><h2 className="mt-1 text-lg font-semibold">{counts.needs_funding ?? 0} payout needs escrow</h2></div></div><p className="mt-4 text-sm leading-6 text-ink/60">Velo operating balance and Noir escrow remain separate. Open the funding center for the next deliberate action.</p><Link href="/fund" className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-emerald hover:underline">Open funding center <ArrowRight size={13} /></Link></Card></div>
     </div>
-  );
+    <div className="mt-6 grid gap-6 xl:grid-cols-[.8fr_1.2fr]"><Card data-tour="journey"><div className="flex items-center justify-between"><div><p className="text-xs font-semibold uppercase tracking-[.18em] text-emerald">Payment journey</p><h2 className="mt-1 text-lg font-semibold">From approved to claimed</h2></div><Clock3 size={18} className="text-ink/30" /></div><div className="mt-6 flex items-center justify-between gap-1">{[["Approved", true], ["Checked", true], ["Authorized", true], ["Claimed", false]].map(([label, done], i) => <div key={String(label)} className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center"><span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold ${done ? "bg-emerald text-warm" : "border border-mist bg-warm text-ink/40"}`}>{done ? "✓" : i + 1}</span><span className="text-[10px] font-medium text-ink/55">{String(label)}</span>{i < 3 && <span className="absolute" />}</div>)}</div><p className="mt-5 text-xs leading-5 text-ink/50">The recipient completes the final step with a wallet-signed transaction.</p></Card><Card data-tour="audit"><div className="mb-5 flex items-center justify-between"><div><p className="text-xs font-semibold uppercase tracking-[.18em] text-emerald">Audit trail</p><h2 className="mt-1 text-lg font-semibold">Recent agent decisions</h2></div><Link href="/activity" className="text-xs font-semibold text-emerald hover:underline">Full activity</Link></div><div className="space-y-4">{(decisions ?? []).map((d) => <div key={d.id} className="flex gap-3"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-mint" /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-medium">{d.reason}</p><StatusBadge status={d.action} /></div><p className="mt-1 text-xs text-ink/45">{new Date(d.created_at).toLocaleString()} · {d.payout_id}</p></div></div>)}{decisions?.length === 0 && <Empty text="No decisions yet." />}</div></Card></div>
+    <OnboardingTour />
+  </div>;
 }
+function Metric({ label, value, note, accent = false, warn = false }: { label: string; value: string | number; note: string; accent?: boolean; warn?: boolean }) { return <Card className="p-4"><p className="text-[11px] font-semibold uppercase tracking-[.14em] text-ink/45">{label}</p><p className={`mt-5 text-2xl font-semibold tracking-[-.05em] ${warn ? "text-amber" : accent ? "text-emerald" : "text-ink"}`}>{value}</p><p className="mt-1 text-xs text-ink/45">{note}</p></Card>; }
+function Empty({ text }: { text: string }) { return <p className="py-8 text-center text-sm text-ink/45">{text}</p>; }
