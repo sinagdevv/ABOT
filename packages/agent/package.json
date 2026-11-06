@@ -1,0 +1,22 @@
+{
+  "name": "@abot/agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@abot/shared": "*",
+    "@noirx402/agent-sdk": "^0.3.0",
+    "@carts1024/velo-sdk": "0.1.0-alpha.4",
+    "@stellar/stellar-sdk": "^16.0.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}
