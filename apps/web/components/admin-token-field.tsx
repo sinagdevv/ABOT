@@ -13,7 +13,7 @@ export function AdminTokenField() {
 
   return (
     <div className="rounded-lg bg-white/5 p-3">
-      <label className="mb-1 block text-xs font-medium text-mist/70">Admin token</label>
+      <label className="mb-1 block text-xs font-medium text-mist/70">Live API token</label>
       <input
         type="password"
         value={value}
@@ -25,10 +25,10 @@ export function AdminTokenField() {
           setAdminToken(value);
           setSaved(true);
         }}
-        placeholder="paste ADMIN_API_TOKEN"
+        placeholder="paste to connect live API"
         className="w-full rounded-md border border-white/10 bg-ink px-2 py-1.5 text-xs text-warm placeholder:text-mist/40 focus:border-mint focus:outline-none"
       />
-      {saved && <p className="mt-1 text-[11px] text-mint">Saved locally.</p>}
+      {saved && <p className="mt-1 text-[11px] text-mint">Saved locally. Reload to connect live.</p>}
     </div>
   );
 }

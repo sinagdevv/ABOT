@@ -1,0 +1,12 @@
+export function NetworkScene({ compact = false }: { compact?: boolean }) {
+  return <div className={`relative mx-auto aspect-[1.12] w-full max-w-[620px] ${compact ? "max-w-[430px]" : ""}`} aria-label="Animated diagram of a payout moving from approval to beneficiary" role="img">
+    <div className="hero-glow absolute inset-[10%] rounded-full blur-3xl" />
+    <svg className="relative h-full w-full overflow-visible" viewBox="0 0 620 550" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="wire" x1="80" y1="80" x2="530" y2="480"><stop stopColor="#47D7AA" stopOpacity=".8" /><stop offset="1" stopColor="#47D7AA" stopOpacity=".08" /></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="7" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter></defs>
+      <path d="M104 148C175 80 244 105 300 188S430 278 504 186" stroke="#DDE8E2" strokeOpacity=".16" strokeWidth="1" /><path d="M104 148C165 250 225 278 300 188S430 140 504 186" stroke="#DDE8E2" strokeOpacity=".1" strokeWidth="1" />
+      <path d="M104 148C174 230 198 392 314 409S427 401 504 455" stroke="url(#wire)" strokeOpacity=".55" strokeWidth="2" /><path d="M104 148C174 230 198 392 314 409S427 401 504 455" className="signal" stroke="#47D7AA" strokeLinecap="round" strokeWidth="3" filter="url(#glow)" /><path d="M104 148C230 147 230 85 300 188S415 320 504 455" className="signal signal-delay" stroke="#F6F9F7" strokeLinecap="round" strokeOpacity=".8" strokeWidth="2" />
+      {[[104,148,"ORG"],[300,188,"AGENT"],[314,409,"NOIR"],[504,455,"YOU"]].map(([cx, cy, label], i) => <g key={String(label)} className={i === 1 ? "float-slow" : ""}><circle cx={Number(cx)} cy={Number(cy)} r={i === 1 ? 31 : 24} fill="#0B1724" stroke={i === 1 ? "#47D7AA" : "#DDE8E2"} strokeOpacity={i === 1 ? 1 : .35} strokeWidth="1.5" /><circle cx={Number(cx)} cy={Number(cy)} r="7" fill={i === 1 ? "#47D7AA" : "#F6F9F7"} /><text fill="#DDE8E2" fontSize="10" fontWeight="600" letterSpacing="1.5" textAnchor="middle" x={Number(cx)} y={Number(cy) + 49}>{String(label)}</text></g>)}
+      <g transform="translate(403 96)"><rect width="122" height="42" rx="12" fill="#F6F9F7" fillOpacity=".08" stroke="#DDE8E2" strokeOpacity=".18"/><circle cx="18" cy="21" r="4" fill="#E4A94F"/><text fill="#DDE8E2" fontSize="11" x="32" y="19">Awaiting funds</text><text fill="#DDE8E2" fillOpacity=".55" fontSize="9" x="32" y="31">Velo request ready</text></g>
+    </svg>
+  </div>;
+}

@@ -1,57 +1,15 @@
 "use client";
 
+import { Bot, ChevronDown, FileSearch, UserRoundCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { adminFetch } from "../../../lib/api-client";
 import { Card, PageHeader } from "../../../components/card";
 import { StatusBadge } from "../../../components/status-badge";
 
-type Decision = {
-  id: string;
-  payout_id: string;
-  action: string;
-  reason: string;
-  detail: Record<string, unknown> | null;
-  created_at: string;
-};
-
+type Decision = { id: string; payout_id: string; action: string; reason: string; detail: Record<string, unknown> | null; created_at: string };
 export default function ActivityPage() {
-  const [decisions, setDecisions] = useState<Decision[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    adminFetch("/api/agent/activity")
-      .then((d) => setDecisions(d.decisions))
-      .catch((err) => setError(err instanceof Error ? err.message : "failed to load"));
-  }, []);
-
-  return (
-    <div>
-      <PageHeader
-        title="Agent activity"
-        description="Every autonomous decision, with the reason the contract or the engine gave — the full audit trail."
-      />
-      {error && <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>}
-
-      <div className="space-y-3">
-        {(decisions ?? []).map((d) => (
-          <Card key={d.id} className="flex items-start justify-between gap-4">
-            <div>
-              <div className="mb-1 flex items-center gap-2">
-                <StatusBadge status={d.action} />
-                <span className="text-xs text-ink/40">{new Date(d.created_at).toLocaleString()}</span>
-              </div>
-              <p className="text-sm text-ink">{d.reason}</p>
-              <p className="mt-1 font-mono text-xs text-ink/40">payout {d.payout_id}</p>
-              {d.detail && (
-                <pre className="mt-2 overflow-x-auto rounded-md bg-ink/5 p-2 text-xs text-ink/60">
-                  {JSON.stringify(d.detail, null, 2)}
-                </pre>
-              )}
-            </div>
-          </Card>
-        ))}
-        {decisions && decisions.length === 0 && <p className="text-sm text-ink/40">No agent activity yet.</p>}
-      </div>
-    </div>
-  );
+  const [decisions, setDecisions] = useState<Decision[] | null>(null); const [error, setError] = useState<string | null>(null); const [open, setOpen] = useState<string | null>(null);
+  useEffect(() => { adminFetch("/api/agent/activity").then((d) => setDecisions(d.decisions)).catch((err) => setError(err instanceof Error ? err.message : "Unable to load activity")); }, []);
+  return <div><PageHeader title="Agent activity" description="A readable audit trail for every autonomous decision, including what needs a human." />{error && <p className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>}<div className="mb-6 grid gap-3 sm:grid-cols-3"><Mini icon={Bot} label="Observed decisions" value={decisions?.length ?? 0} /><Mini icon={UserRoundCheck} label="Human review" value={(decisions ?? []).filter((d) => d.action === "manual_review").length} warn /><Mini icon={FileSearch} label="Evidence attached" value={(decisions ?? []).filter((d) => d.detail).length} /></div><div className="space-y-3">{decisions?.map((d) => <Card key={d.id} className="p-0"><button onClick={() => setOpen(open === d.id ? null : d.id)} className="flex w-full items-start gap-4 p-5 text-left"><span className={`mt-1 h-3 w-3 shrink-0 rounded-full ${d.action === "manual_review" ? "bg-red-500" : d.action === "needs_funding" ? "bg-amber" : "bg-mint"}`} /><span className="min-w-0 flex-1"><span className="flex flex-wrap items-center gap-2"><StatusBadge status={d.action} /><span className="text-xs text-ink/40">{new Date(d.created_at).toLocaleString()}</span></span><span className="mt-3 block text-sm font-medium">{d.reason}</span><span className="mt-1 block font-mono text-[11px] text-ink/40">payout {d.payout_id}</span></span><ChevronDown size={16} className={`mt-1 shrink-0 text-ink/35 transition-transform ${open === d.id ? "rotate-180" : ""}`} /></button>{open === d.id && <div className="border-t border-mist bg-warm/60 px-12 py-4 text-xs text-ink/60"><p className="mb-2 font-semibold uppercase tracking-[.14em] text-ink/40">Decision context</p><pre className="overflow-x-auto whitespace-pre-wrap font-mono">{JSON.stringify(d.detail ?? { note: "No extra detail returned by the backend." }, null, 2)}</pre>{d.action === "manual_review" && <p className="mt-4 rounded-lg bg-red-50 p-3 text-red-700">Manual review is required. Confirm the external transaction outcome before requeueing.</p>}</div>}</Card>)}{decisions?.length === 0 && <Card><p className="py-8 text-center text-sm text-ink/45">No decisions yet. The agent will add an entry when a due payout is evaluated.</p></Card>}{!decisions && <Card><p className="py-8 text-center text-sm text-ink/45">Loading activity…</p></Card>}</div></div>;
 }
+function Mini({ icon: Icon, label, value, warn = false }: { icon: typeof Bot; label: string; value: number; warn?: boolean }) { return <Card className="p-4"><Icon size={17} className={warn ? "text-amber" : "text-emerald"} /><p className="mt-4 text-2xl font-semibold">{value}</p><p className="mt-1 text-xs text-ink/50">{label}</p></Card>; }

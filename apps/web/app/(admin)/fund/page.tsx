@@ -1,138 +1,16 @@
 "use client";
 
+import { ArrowRight, ExternalLink, Info, WalletCards } from "lucide-react";
 import { useEffect, useState } from "react";
-import { ExternalLink, Wallet } from "lucide-react";
-import { adminFetch } from "../../../lib/api-client";
+import { adminFetch, isDemoMode } from "../../../lib/api-client";
 import { Card, PageHeader } from "../../../components/card";
 import { StatusBadge } from "../../../components/status-badge";
 
-type FundingRequest = {
-  id: string;
-  payout_id: string | null;
-  payment_intent_id: string;
-  checkout_url: string | null;
-  amount: string;
-  asset: string;
-  status: string;
-  created_at: string;
-};
-
+type FundingRequest = { id: string; payout_id: string | null; payment_intent_id: string; checkout_url: string | null; amount: string; asset: string; status: string; created_at: string };
 export default function FundPage() {
-  const [requests, setRequests] = useState<FundingRequest[] | null>(null);
-  const [amount, setAmount] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function load() {
-    try {
-      const { fundingRequests } = await adminFetch("/api/fund");
-      setRequests(fundingRequests);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "failed to load");
-    }
-  }
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  async function createTopUp(e: React.FormEvent) {
-    e.preventDefault();
-    setSubmitting(true);
-    setError(null);
-    try {
-      const { checkoutUrl } = await adminFetch("/api/fund", { method: "POST", body: JSON.stringify({ amount }) });
-      setAmount("");
-      await load();
-      if (checkoutUrl) window.open(checkoutUrl, "_blank");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "failed to create funding session");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <div>
-      <PageHeader
-        title="Velo funding"
-        description="Velo checkout tops up ABOT's operating balance. It does not fund Noir escrow directly — that's a separate, deliberate step once funds arrive."
-      />
-      {error && <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>}
-
-      <Card className="mb-6">
-        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink">
-          <Wallet size={14} /> Request a top-up
-        </h2>
-        <form onSubmit={createTopUp} className="flex gap-3">
-          <input
-            required
-            placeholder="Amount (e.g. 100.00)"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className="flex-1 rounded-lg border border-mist px-3 py-2 text-sm"
-          />
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-lg bg-emerald px-4 py-2 text-sm font-medium text-warm hover:bg-emerald/90 disabled:opacity-50"
-          >
-            {submitting ? "Creating…" : "Create checkout session"}
-          </button>
-        </form>
-        <p className="mt-2 text-xs text-ink/50">
-          Underfunded payouts also open a session automatically the next time the agent sweep runs.
-        </p>
-      </Card>
-
-      <Card>
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-mist text-xs uppercase tracking-wide text-ink/50">
-              <th className="py-2">Payment intent</th>
-              <th>Amount</th>
-              <th>Linked payout</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {(requests ?? []).map((r) => (
-              <tr key={r.id} className="border-b border-mist/60">
-                <td className="py-3 font-mono text-xs text-ink/60">{r.payment_intent_id}</td>
-                <td>
-                  {r.amount} {r.asset}
-                </td>
-                <td className="font-mono text-xs text-ink/40">{r.payout_id?.slice(0, 8) ?? "—"}</td>
-                <td>
-                  <StatusBadge status={r.status} />
-                </td>
-                <td className="text-xs text-ink/50">{new Date(r.created_at).toLocaleString()}</td>
-                <td>
-                  {r.checkout_url && r.status === "pending" && (
-                    <a
-                      href={r.checkout_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1 text-xs text-emerald hover:underline"
-                    >
-                      <ExternalLink size={12} /> Open checkout
-                    </a>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {requests && requests.length === 0 && (
-              <tr>
-                <td colSpan={6} className="py-6 text-center text-ink/40">
-                  No funding requests yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </Card>
-    </div>
-  );
+  const [requests, setRequests] = useState<FundingRequest[] | null>(null); const [amount, setAmount] = useState(""); const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null);
+  async function load() { try { setRequests((await adminFetch("/api/fund")).fundingRequests); } catch (err) { setError(err instanceof Error ? err.message : "Unable to load funding requests"); } }
+  useEffect(() => { load(); }, []);
+  async function create(e: React.FormEvent) { e.preventDefault(); setBusy(true); setError(null); try { const { checkoutUrl } = await adminFetch("/api/fund", { method: "POST", body: JSON.stringify({ amount }) }); setAmount(""); await load(); if (checkoutUrl) window.open(checkoutUrl, "_blank"); } catch (err) { setError(err instanceof Error ? err.message : "Unable to create funding session"); } finally { setBusy(false); } }
+  return <div><PageHeader title="Funding center" description="Keep operating-balance funding visible and separate from owner-side Noir escrow funding." />{error && <p className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</p>}<div className="mb-6 grid gap-4 lg:grid-cols-[1.1fr_.9fr]"><Card className="bg-ink text-warm"><div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-mint/15 text-mint"><WalletCards size={19} /></span><div><p className="text-xs font-semibold uppercase tracking-[.18em] text-mint">Velo operating balance</p><h2 className="mt-1 text-xl font-semibold">Request a top-up</h2></div></div><form onSubmit={create} className="mt-6 flex flex-col gap-3 sm:flex-row"><label className="flex-1"><span className="sr-only">Amount</span><input required inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount in XLM" className="w-full rounded-xl border border-mist/20 bg-white/10 px-3 py-3 text-sm text-warm placeholder:text-mist/45" /></label><button disabled={busy} className="flex items-center justify-center gap-2 rounded-xl bg-mint px-4 py-3 text-sm font-semibold text-ink hover:bg-warm disabled:opacity-50">{busy ? "Creating…" : "Create Velo session"} <ArrowRight size={15} /></button></form>{isDemoMode() && <p className="mt-3 text-xs text-mist/55">Demo mode has no external checkout. Live mode opens the backend-provided Velo URL.</p>}</Card><Card><div className="flex items-start gap-3"><Info className="mt-0.5 shrink-0 text-emerald" size={17} /><div><h2 className="font-semibold">Two balances. Two actions.</h2><p className="mt-2 text-sm leading-6 text-ink/60">Velo confirms an organization top-up. It does not prove that Noir escrow has been funded. Treat the escrow step as a separate, deliberate owner operation.</p></div></div></Card></div><Card className="p-0"><div className="border-b border-mist p-5"><p className="text-xs font-semibold uppercase tracking-[.18em] text-emerald">Request history</p><h2 className="mt-1 text-lg font-semibold">Velo sessions</h2></div><div className="table-scroll"><table className="min-w-[680px] w-full text-left text-sm"><thead><tr className="border-b border-mist text-[11px] uppercase tracking-[.14em] text-ink/45"><th className="px-5 py-3">Payment intent</th><th>Amount</th><th>Linked payout</th><th>Status</th><th>Created</th><th /></tr></thead><tbody>{requests?.map((r) => <tr key={r.id} className="border-b border-mist/60 last:border-0"><td className="px-5 py-4 font-mono text-xs text-ink/55">{r.payment_intent_id}</td><td>{r.amount} {r.asset}</td><td className="font-mono text-xs text-ink/40">{r.payout_id?.slice(0, 12) ?? "—"}</td><td><StatusBadge status={r.status} /></td><td className="text-xs text-ink/50">{new Date(r.created_at).toLocaleString()}</td><td>{r.checkout_url && r.status === "pending" && <a href={r.checkout_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs font-semibold text-emerald hover:underline">Open <ExternalLink size={12} /></a>}</td></tr>)}{requests?.length === 0 && <tr><td colSpan={6} className="py-14 text-center text-sm text-ink/45">No funding sessions yet.</td></tr>}{!requests && <tr><td colSpan={6} className="py-14 text-center text-sm text-ink/45">Loading funding history…</td></tr>}</tbody></table></div></Card></div>;
 }
