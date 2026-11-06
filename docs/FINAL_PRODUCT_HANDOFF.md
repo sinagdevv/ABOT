@@ -46,7 +46,7 @@ The hero uses SVG/CSS as the resilient path to preserve accessibility and perfor
 
 ## Deployment status
 
-Local implementation is ready to commit. Vercel deployment was not performed in this handoff; after push, deploy from the existing Vercel project with root `apps/web`, preserving server-only environment variables and `NEXT_PUBLIC_APP_URL`.
+Commit `605f107` is pushed to `feat/abot-hackathon-mvp` and deployed to the existing Vercel project. Production returned `READY` and is aliased at `https://abot-web.vercel.app`. Anonymous HEAD/HTML checks returned 200 for `/`, `/settings`, and `/sign-in`; the project reports Vercel deployment protection enabled in metadata. Server-only environment variables and `NEXT_PUBLIC_APP_URL` remain Vercel-managed.
 
 ## Known limitations
 
