@@ -6,10 +6,13 @@ import { supabaseServer } from "../../../lib/supabase-server";
 /** Admin-initiated, general top-up (not tied to one payout) — pre-funding the org's operating balance. */
 export async function POST(request: Request) {
   if (!isAuthorized(request)) return unauthorized();
+  if (Number(request.headers.get("content-length") ?? 0) > 4_096) {
+    return Response.json({ error: "request body too large" }, { status: 413 });
+  }
 
   const body = await request.json().catch(() => null);
   const amount = body && typeof body === "object" ? (body as Record<string, unknown>).amount : null;
-  if (typeof amount !== "string" || !amount) {
+  if (typeof amount !== "string" || !/^(?:0|[1-9]\d*)(?:\.\d{1,12})?$/.test(amount) || /^0(?:\.0*)?$/.test(amount)) {
     return Response.json({ error: "amount (decimal string) is required" }, { status: 400 });
   }
 

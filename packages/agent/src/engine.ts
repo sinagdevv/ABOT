@@ -29,6 +29,8 @@ export async function runAgentSweep(deps: SweepDeps): Promise<SweepResult[]> {
   const results: SweepResult[] = [];
 
   for (const payout of claimed) {
+    const leaseToken = payout.leaseToken;
+    if (!leaseToken) throw new Error(`payout ${payout.id} was claimed without a lease`);
     try {
       const check = await deps.noir.checkPayment(payout);
 
@@ -46,9 +48,9 @@ export async function runAgentSweep(deps: SweepDeps): Promise<SweepResult[]> {
               asset: session.asset,
             });
           }
-          await deps.gateway.resolveHold(payout.id, "needs_funding");
+          await deps.gateway.resolveHold(payout.id, leaseToken, "needs_funding");
         } else {
-          await deps.gateway.resolveHold(payout.id, "pending");
+          await deps.gateway.resolveHold(payout.id, leaseToken, "pending");
         }
 
         await deps.gateway.recordDecision({ payoutId: payout.id, action, reason: check.reason });
@@ -56,10 +58,9 @@ export async function runAgentSweep(deps: SweepDeps): Promise<SweepResult[]> {
         continue;
       }
 
-      const pendingBefore = await deps.noir.getPendingBalance(payout.recipientAddress);
       try {
         const auth = await deps.noir.authorizePayment(payout);
-        await deps.gateway.completeAuthorization(payout.id, auth);
+        await deps.gateway.completeAuthorization(payout.id, leaseToken, auth);
         await deps.gateway.recordDecision({
           payoutId: payout.id,
           action: "authorized",
@@ -68,27 +69,16 @@ export async function runAgentSweep(deps: SweepDeps): Promise<SweepResult[]> {
         });
         results.push({ payoutId: payout.id, action: "authorized" });
       } catch (submitError) {
-        // The transaction may have reached the ledger even though the SDK call
-        // threw (timeout, dropped response). Reconcile before ever retrying:
-        // ponytail: balance-delta heuristic, not a per-nonce chain lookup —
-        // upgrade to matching `payment.authorized` events by nonce once the
-        // SDK exposes nonce on that event.
-        const pendingAfter = await deps.noir.getPendingBalance(payout.recipientAddress);
-        if (pendingAfter - pendingBefore >= payout.amountStroops) {
-          await deps.gateway.completeAuthorization(payout.id, { txHash: null, nonce: "" });
-          await deps.gateway.recordDecision({
-            payoutId: payout.id,
-            action: "authorized",
-            reason: "reconciled after uncertain submission: merchant pending balance already reflects this payment",
-          });
-          results.push({ payoutId: payout.id, action: "authorized" });
-        } else {
-          throw submitError;
-        }
+        // Noir events do not include the authorization nonce, so neither a
+        // balance delta nor an event can prove this particular payout was paid.
+        const reason = "authorization outcome uncertain; held for manual review instead of retrying";
+        await deps.gateway.holdForReview(payout.id, leaseToken, reason);
+        await deps.gateway.recordDecision({ payoutId: payout.id, action: "hold_manual_review", reason });
+        results.push({ payoutId: payout.id, action: "hold_manual_review" });
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      await deps.gateway.failPayout(payout.id, message);
+      const message = (err instanceof Error ? err.message : String(err)).slice(0, 500);
+      await deps.gateway.failPayout(payout.id, leaseToken, message);
       await deps.gateway.recordDecision({ payoutId: payout.id, action: "error", reason: message });
       results.push({ payoutId: payout.id, action: "error" });
     }

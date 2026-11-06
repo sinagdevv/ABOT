@@ -21,6 +21,8 @@ function makePayout(overrides: Partial<Payout> = {}): Payout {
     failureReason: null,
     createdAt: new Date(0).toISOString(),
     updatedAt: new Date(0).toISOString(),
+    leaseToken: "lease-1",
+    leaseExpiresAt: new Date(60_000).toISOString(),
     ...overrides,
   };
 }
@@ -43,14 +45,17 @@ class FakeGateway implements PayoutGateway, FundingGateway {
         new Date(p.dueAt).getTime() <= now.getTime(),
     );
   }
-  async resolveHold(payoutId: string, status: "pending" | "needs_funding") {
+  async resolveHold(payoutId: string, _leaseToken: string, status: "pending" | "needs_funding") {
     this.statuses.set(payoutId, status);
   }
-  async completeAuthorization(payoutId: string, result: { txHash: string | null }) {
+  async completeAuthorization(payoutId: string, _leaseToken: string, result: { txHash: string | null }) {
     this.statuses.set(payoutId, "authorized");
     this.authorized.push({ payoutId, txHash: result.txHash });
   }
-  async failPayout(payoutId: string, reason: string) {
+  async holdForReview(payoutId: string, _leaseToken: string, _reason: string) {
+    this.statuses.set(payoutId, "manual_review");
+  }
+  async failPayout(payoutId: string, _leaseToken: string, reason: string) {
     this.statuses.set(payoutId, "failed");
     this.failed.push({ payoutId, reason });
   }
@@ -132,16 +137,13 @@ describe("runAgentSweep", () => {
     expect(gateway.statuses.get("payout-1")).toBe("pending");
   });
 
-  it("reconciles an uncertain submission instead of blindly retrying", async () => {
+  it("holds an uncertain submission instead of blindly retrying", async () => {
     const payout = makePayout();
     const gateway = new FakeGateway([payout]);
-    let pendingBalance = 0n;
     const noir: INoirService = {
       checkPayment: async () => ({ ok: true }),
-      getPendingBalance: async () => pendingBalance,
+      getPendingBalance: async () => 0n,
       authorizePayment: async () => {
-        // The ledger actually applied the authorization before the SDK call errored.
-        pendingBalance += payout.amountStroops;
         throw new Error("request timed out");
       },
     };
@@ -149,12 +151,12 @@ describe("runAgentSweep", () => {
 
     const results = await runAgentSweep({ gateway, funding: gateway, noir, velo, fundingUrls, now: new Date(1) });
 
-    expect(results).toEqual([{ payoutId: "payout-1", action: "authorized" }]);
-    expect(gateway.statuses.get("payout-1")).toBe("authorized");
+    expect(results).toEqual([{ payoutId: "payout-1", action: "hold_manual_review" }]);
+    expect(gateway.statuses.get("payout-1")).toBe("manual_review");
     expect(gateway.failed).toEqual([]);
   });
 
-  it("fails a payout when the submission is uncertain and the balance never reflects it", async () => {
+  it("holds a payout for review when the submission outcome is uncertain", async () => {
     const payout = makePayout();
     const gateway = new FakeGateway([payout]);
     const noir: INoirService = {
@@ -168,8 +170,8 @@ describe("runAgentSweep", () => {
 
     const results = await runAgentSweep({ gateway, funding: gateway, noir, velo, fundingUrls, now: new Date(1) });
 
-    expect(results).toEqual([{ payoutId: "payout-1", action: "error" }]);
-    expect(gateway.statuses.get("payout-1")).toBe("failed");
+    expect(results).toEqual([{ payoutId: "payout-1", action: "hold_manual_review" }]);
+    expect(gateway.statuses.get("payout-1")).toBe("manual_review");
   });
 
   it("never claims a payout that is not yet due", async () => {

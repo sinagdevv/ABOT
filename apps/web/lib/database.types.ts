@@ -18,6 +18,8 @@ export interface Database {
           authorization_tx_hash: string | null;
           claim_tx_hash: string | null;
           failure_reason: string | null;
+          lease_token: string | null;
+          lease_expires_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -35,6 +37,8 @@ export interface Database {
           authorization_tx_hash?: string | null;
           claim_tx_hash?: string | null;
           failure_reason?: string | null;
+          lease_token?: string | null;
+          lease_expires_at?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["payouts"]["Insert"]>;
         Relationships: [];
@@ -99,11 +103,17 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["webhook_events"]["Insert"]>;
         Relationships: [];
       };
+      payout_nonce_sequences: {
+        Row: { device_hash: string; next_nonce: string };
+        Insert: { device_hash: string; next_nonce: string };
+        Update: Partial<Database["public"]["Tables"]["payout_nonce_sequences"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
       claim_due_payouts: {
-        Args: { p_now: string; p_limit?: number };
+        Args: { p_now: string; p_limit?: number; p_lease_seconds?: number };
         Returns: Database["public"]["Tables"]["payouts"]["Row"][];
       };
     };

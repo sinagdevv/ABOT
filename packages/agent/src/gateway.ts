@@ -19,9 +19,10 @@ export interface PayoutGateway {
    */
   claimDuePayouts(now: Date): Promise<Payout[]>;
   /** Releases a payout claimed above back to a non-terminal status (no authorization happened). */
-  resolveHold(payoutId: string, status: Extract<PayoutStatus, "pending" | "needs_funding">): Promise<void>;
-  completeAuthorization(payoutId: string, result: { txHash: string | null; nonce: string }): Promise<void>;
-  failPayout(payoutId: string, reason: string): Promise<void>;
+  resolveHold(payoutId: string, leaseToken: string, status: Extract<PayoutStatus, "pending" | "needs_funding">): Promise<void>;
+  completeAuthorization(payoutId: string, leaseToken: string, result: { txHash: string | null; nonce: string }): Promise<void>;
+  holdForReview(payoutId: string, leaseToken: string, reason: string): Promise<void>;
+  failPayout(payoutId: string, leaseToken: string, reason: string): Promise<void>;
   recordDecision(decision: NewDecision): Promise<void>;
   /** Admin-initiated: a human reviewed a failed payout and wants the next sweep to re-evaluate it. */
   requeue(payoutId: string): Promise<void>;

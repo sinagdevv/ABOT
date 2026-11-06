@@ -5,7 +5,7 @@ import { CheckCircle2, ShieldAlert } from "lucide-react";
 
 export default function ClaimPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [secret, setSecret] = useState("");
+  const [signedTxXdr, setSignedTxXdr] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -18,7 +18,7 @@ export default function ClaimPage({ params }: { params: Promise<{ id: string }> 
       const res = await fetch(`/api/payouts/${id}/claim`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipientSecret: secret }),
+        body: JSON.stringify({ signedTxXdr }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "claim failed");
@@ -28,7 +28,7 @@ export default function ClaimPage({ params }: { params: Promise<{ id: string }> 
       setMessage(err instanceof Error ? err.message : "claim failed");
       setStatus("error");
     } finally {
-      setSecret("");
+      setSignedTxXdr("");
     }
   }
 
@@ -37,8 +37,8 @@ export default function ClaimPage({ params }: { params: Promise<{ id: string }> 
       <div className="w-full max-w-md rounded-xl2 bg-white p-8 shadow-card">
         <h1 className="mb-1 text-lg font-semibold text-ink">Claim your payout</h1>
         <p className="mb-6 text-sm text-ink/60">
-          Testnet demo only. Your secret key signs the claim locally for this request and is never stored. Production
-          ABOT connects a wallet extension instead of asking for a secret key.
+          Sign the prepared claim with your Testnet wallet, then submit the signed transaction here. ABOT never sees
+          your private key.
         </p>
 
         {status === "done" ? (
@@ -49,13 +49,13 @@ export default function ClaimPage({ params }: { params: Promise<{ id: string }> 
           </div>
         ) : (
           <form onSubmit={claim}>
-            <label className="mb-1 block text-xs font-medium text-ink/60">Testnet secret key (S…)</label>
+            <label className="mb-1 block text-xs font-medium text-ink/60">Wallet-signed transaction XDR</label>
             <input
               required
-              type="password"
-              value={secret}
-              onChange={(e) => setSecret(e.target.value)}
-              placeholder="SA1B2C3…"
+              type="text"
+              value={signedTxXdr}
+              onChange={(e) => setSignedTxXdr(e.target.value)}
+              placeholder="AAAAAgAAAA…"
               className="mb-3 w-full rounded-lg border border-mist px-3 py-2 text-sm font-mono"
             />
             <button

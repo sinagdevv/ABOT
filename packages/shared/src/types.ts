@@ -5,6 +5,7 @@ export type PayoutStatus =
   | "pending"
   | "needs_funding"
   | "authorizing"
+  | "manual_review"
   | "authorized"
   | "claimed"
   | "failed"
@@ -26,6 +27,9 @@ export interface Payout {
   failureReason: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Internal DB lease; never expose this in API responses. */
+  leaseToken: string | null;
+  leaseExpiresAt: string | null;
 }
 
 export type AgentDecisionAction =
@@ -37,6 +41,7 @@ export type AgentDecisionAction =
   | "hold_over_limit"
   | "hold_wrong_asset"
   | "hold_in_flight"
+  | "hold_manual_review"
   | "funding_requested"
   | "error";
 

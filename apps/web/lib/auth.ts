@@ -4,10 +4,17 @@ import { env } from "./env";
 /** Constant-time bearer-token check for every state-changing admin/agent endpoint. */
 export function isAuthorized(request: Request): boolean {
   const header = request.headers.get("authorization") ?? "";
-  const [scheme, token] = header.split(" ");
+  const parts = header.split(" ");
+  if (parts.length !== 2) return false;
+  const [scheme, token] = parts;
   if (scheme !== "Bearer" || !token) return false;
 
-  const expected = Buffer.from(env.adminApiToken);
+  let expected: Buffer;
+  try {
+    expected = Buffer.from(env.adminApiToken);
+  } catch {
+    return false;
+  }
   const actual = Buffer.from(token);
   if (expected.length !== actual.length) return false;
   return timingSafeEqual(expected, actual);

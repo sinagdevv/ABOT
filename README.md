@@ -42,7 +42,8 @@ transaction behind it.
    with a deterministic idempotency key so resubmission never double-creates it.
 2. **Agent evaluates due payouts.** On a sweep (manual button or Vercel Cron),
    it atomically claims due, unlocked payouts (`FOR UPDATE SKIP LOCKED` — two
-   concurrent sweeps can never grab the same one) and asks Noir's own
+   concurrent sweeps can never grab the same one), allocates a stable
+   per-device nonce, and asks Noir's own
    `checkPayment` whether authorization would succeed.
 3. **Underfunded → Velo checkout.** If the contract says `insufficient_escrow`,
    the agent opens one Velo checkout session per payout (idempotency-keyed, so
@@ -53,14 +54,14 @@ transaction behind it.
 5. **Organization funds Noir escrow separately** (a deliberate, logged action —
    Velo checkout does not auto-fund escrow; that's a different contract).
 6. **Agent authorizes.** Once policy + escrow pass, it calls Noir's
-   `authorizePayment` with its own server-held agent key. If the submission's
-   outcome is uncertain (timeout, dropped response), the agent reconciles by
-   checking whether the merchant's pending balance already reflects the
-   payment *before* ever retrying — it never blindly resubmits.
-7. **Recipient claims** through Noir's `claim` (`/claim/[payoutId]`). Testnet
-   demo only: the recipient's secret signs the claim server-side, transiently,
-   never persisted — production would swap this for a browser wallet signer
-   (`walletSigner` / `noirExtensionSigner`).
+   `authorizePayment` with its own server-held agent key and stored nonce. If
+   the submission's outcome is uncertain (timeout, dropped response), the agent
+   moves the payout to `manual_review`; Noir's public authorization event does
+   not include the nonce needed to prove that a specific payout was submitted,
+   so it never blindly retries.
+7. **Recipient claims** through Noir's `claim` (`/claim/[payoutId]`). ABOT
+   prepares the unsigned transaction, the recipient wallet signs it, and ABOT
+   submits the signed XDR; no private key crosses the browser or server boundary.
 8. **Every decision is persisted**: action, reason (the contract's own refusal
    name when applicable), and detail — visible on `/activity`.
 
@@ -157,22 +158,22 @@ exercised against hosted infrastructure:
   here because Docker Desktop's engine wasn't running. Create a project,
   run the migration in `supabase/migrations/0001_init.sql`, and fill in
   `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`.
-- **Velo**: integration code and webhook-signature tests are complete, but
-  creating a real checkout session needs a `VELO_API_KEY` from a Velo
-  project dashboard, which this environment doesn't have.
+- **Velo**: integration code, signed webhook checks, retrieved-intent status
+  verification, and amount/asset correlation are complete, but creating a real
+  checkout session needs a `VELO_API_KEY` from a Velo project dashboard, which
+  this environment doesn't have.
 - **Deploy**: no Vercel token available to `vercel deploy` from here. Repo
   is ready to deploy as-is (`vercel.json` includes the Cron Job for the
   agent sweep) once linked to a Vercel project with the env vars above.
 - **Screenshots**: pending a deployed/running instance to capture from.
 
-Everything else — the decision engine, the state machine, idempotency and
-concurrency safety, the Noir Testnet integration, and the five screens — is
-implemented, tested, and (for Noir) verified against the real network.
+The decision engine, state machine, idempotency and concurrency protections,
+and Noir Testnet integration are implemented; hosted database, Velo checkout,
+and deployment verification remain environment-dependent.
 
 ## Next steps
 
-- Wire `/claim/[id]` to a browser wallet (`walletSigner` / Stellar Wallets
-  Kit) instead of a pasted Testnet secret.
+- Update `/claim/[id]` to obtain a wallet-signed XDR and POST `{ signedTxXdr }`.
 - Map Velo's settled fiat/stablecoin amount to an explicit "ready to fund
   escrow" admin action, rather than leaving that link manual.
 - Replace the single `ADMIN_API_TOKEN` bearer check with Supabase Auth +

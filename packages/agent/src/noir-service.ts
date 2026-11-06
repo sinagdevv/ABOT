@@ -39,8 +39,8 @@ export class NoirService {
   }
 
   async authorizePayment(payout: Payout): Promise<AuthorizeResult> {
-    const nonce = BigInt(Date.now());
-    const { hash } = await this.client.authorizePayment({
+    const nonce = payout.authorizationNonce ? BigInt(payout.authorizationNonce) : BigInt(Date.now());
+    const { hash, nonce: submittedNonce } = await this.client.authorizePayment({
       agent: this.agent,
       deviceHash: payout.deviceHash,
       merchant: payout.recipientAddress,
@@ -48,10 +48,18 @@ export class NoirService {
       amount: payout.amountStroops,
       nonce,
     });
-    return { txHash: hash, nonce: nonce.toString() };
+    return { txHash: hash, nonce: submittedNonce.toString() };
   }
 
   claim(merchant: NoirSigner, token: string): Promise<{ hash: string }> {
     return this.client.claim({ merchant, token });
+  }
+
+  submitClaim(signedTxXdr: string, token: string): Promise<string> {
+    return this.client.submit(signedTxXdr, { kind: "claim", token });
+  }
+
+  prepareClaim(source: string, token: string): Promise<string> {
+    return this.client.prepare(source, { kind: "claim", token });
   }
 }
