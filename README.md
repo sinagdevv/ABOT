@@ -18,6 +18,7 @@ autonomously — funding, authorizing, and auditing every transfer through
   confirmed Testnet transaction hashes for the full Noir lifecycle.
 - Demo script / pitch notes: [`docs/demo-script.md`](docs/demo-script.md),
   [`docs/pitch.md`](docs/pitch.md).
+- Judge outline / capability boundary: [`docs/judge-prep.md`](docs/judge-prep.md).
 - Architecture: [`docs/architecture.md`](docs/architecture.md).
 
 ## Problem
