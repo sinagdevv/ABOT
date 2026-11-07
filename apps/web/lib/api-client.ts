@@ -1,13 +1,18 @@
 "use client";
 
+import { toStroops } from "@abot/shared";
+
 const SESSION_KEY = "abot_admin_session";
 const MODE_EVENT = "abot-mode-change";
 
+/** A real Testnet-format public key used only by the local Demo Mode helper. */
+export const DEMO_RECIPIENT_ADDRESS = "GATG3ZLXHQZ3H4COYSWN2RFODQKXUS2JKJJ5I7GSAHSJU7P35U23ESRA";
+
 const INITIAL_PAYOUTS = [
-  { id: "payout-demo-01", status: "authorized", amountStroops: "125000000", asset: "XLM", recipientName: "Maya Santos", recipientAddress: "GDEMO7MAYA7SANTOS7RECIPIENT7ADDRESS7TESTNET", dueAt: "2026-11-07T04:30:00.000Z", failureReason: null, authorizationTxHash: "demo-auth-8af1", claimTxHash: null },
-  { id: "payout-demo-02", status: "needs_funding", amountStroops: "240000000", asset: "XLM", recipientName: "Jon Bell", recipientAddress: "GDEMO7JON7BELL7RECIPIENT7ADDRESS7TESTNET", dueAt: "2026-11-07T06:00:00.000Z", failureReason: null, authorizationTxHash: null, claimTxHash: null },
-  { id: "payout-demo-03", status: "claimed", amountStroops: "80000000", asset: "XLM", recipientName: "Ari Flores", recipientAddress: "GDEMO7ARI7FLORES7RECIPIENT7ADDRESS7TESTNET", dueAt: "2026-11-06T08:15:00.000Z", failureReason: null, authorizationTxHash: "demo-auth-2c11", claimTxHash: "demo-claim-1bd4" },
-  { id: "payout-demo-04", status: "manual_review", amountStroops: "50000000", asset: "XLM", recipientName: "Nia Cruz", recipientAddress: "GDEMO7NIA7CRUZ7RECIPIENT7ADDRESS7TESTNET", dueAt: "2026-11-07T02:20:00.000Z", failureReason: "Authorization outcome needs human verification.", authorizationTxHash: null, claimTxHash: null },
+  { id: "payout-demo-01", status: "authorized", amountStroops: "125000000", asset: "XLM", recipientName: "Maya Santos", recipientAddress: DEMO_RECIPIENT_ADDRESS, dueAt: "2026-11-07T04:30:00.000Z", failureReason: null, authorizationTxHash: "demo-auth-8af1", claimTxHash: null },
+  { id: "payout-demo-02", status: "needs_funding", amountStroops: "240000000", asset: "XLM", recipientName: "Jon Bell", recipientAddress: DEMO_RECIPIENT_ADDRESS, dueAt: "2026-11-07T06:00:00.000Z", failureReason: null, authorizationTxHash: null, claimTxHash: null },
+  { id: "payout-demo-03", status: "claimed", amountStroops: "80000000", asset: "XLM", recipientName: "Ari Flores", recipientAddress: DEMO_RECIPIENT_ADDRESS, dueAt: "2026-11-06T08:15:00.000Z", failureReason: null, authorizationTxHash: "demo-auth-2c11", claimTxHash: "demo-claim-1bd4" },
+  { id: "payout-demo-04", status: "manual_review", amountStroops: "50000000", asset: "XLM", recipientName: "Nia Cruz", recipientAddress: DEMO_RECIPIENT_ADDRESS, dueAt: "2026-11-07T02:20:00.000Z", failureReason: "Authorization outcome needs human verification.", authorizationTxHash: null, claimTxHash: null },
 ];
 const INITIAL_FUNDING: Array<{ id: string; payout_id: string | null; payment_intent_id: string; checkout_url: string | null; amount: string; asset: string; status: string; created_at: string }> = [{ id: "fund-demo-01", payout_id: "payout-demo-02", payment_intent_id: "demo_pi_01", checkout_url: null, amount: "240.00", asset: "XLM", status: "pending", created_at: "2026-11-07T03:42:00.000Z" }];
 const INITIAL_DECISIONS: Array<{ id: string; payout_id: string; action: string; reason: string; detail: Record<string, unknown>; created_at: string }> = [
@@ -55,7 +60,9 @@ async function demoFetch(path: string, init: RequestInit = {}) {
   const body = typeof init.body === "string" ? JSON.parse(init.body) : {};
   if (path === "/api/payouts" && method === "GET") return { payouts: demoPayouts };
   if (path === "/api/payouts" && method === "POST") {
-    const payout = { id: `payout-demo-${demoPayouts.length + 1}`, status: "pending", amountStroops: String(Math.round(Number(body.amount || 0) * 10000000)), asset: body.asset || "XLM", recipientName: body.recipientName, recipientAddress: body.recipientAddress, dueAt: body.dueAt, failureReason: null, authorizationTxHash: null, claimTxHash: null };
+    const amountStroops = toStroops(String(body.amount ?? ""));
+    if (amountStroops <= 0n) throw new Error("Enter an amount greater than 0.");
+    const payout = { id: `payout-demo-${demoPayouts.length + 1}`, status: "pending", amountStroops: amountStroops.toString(), asset: body.asset || "XLM", recipientName: body.recipientName, recipientAddress: body.recipientAddress, dueAt: body.dueAt, failureReason: null, authorizationTxHash: null, claimTxHash: null };
     demoPayouts = [payout, ...demoPayouts];
     return { payout };
   }
@@ -91,6 +98,12 @@ export async function appFetch(path: string, init: RequestInit = {}) {
     },
   });
   const data = await res.json().catch(() => ({}));
+  if (res.status === 401) {
+    window.sessionStorage.removeItem(SESSION_KEY);
+    window.localStorage.setItem("abot_mode", "demo");
+    window.dispatchEvent(new Event(MODE_EVENT));
+    throw new Error("Your live Testnet session expired. Re-enter the operator token to continue.");
+  }
   if (!res.ok) throw new Error(data.error ?? `request failed (${res.status})`);
   return data;
 }
@@ -103,6 +116,12 @@ export async function adminFetch(path: string, init: RequestInit = {}) {
     headers: { ...(init.body ? { "Content-Type": "application/json" } : {}), ...init.headers },
   });
   const data = await res.json().catch(() => ({}));
+  if (res.status === 401) {
+    window.sessionStorage.removeItem(SESSION_KEY);
+    window.localStorage.setItem("abot_mode", "demo");
+    window.dispatchEvent(new Event(MODE_EVENT));
+    throw new Error("Your live Testnet session expired. Re-enter the operator token to continue.");
+  }
   if (!res.ok) throw new Error(data.error ?? `request failed (${res.status})`);
   return data;
 }

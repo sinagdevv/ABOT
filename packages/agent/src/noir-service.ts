@@ -27,9 +27,12 @@ export class NoirService {
   private readonly client: NoirAgentClient;
   private readonly agent: NoirSigner;
 
-  constructor(opts: { agentSecret: string; rpcUrl?: string }) {
+  constructor(opts: { agentSecret: string; expectedAgentPublicKey?: string; rpcUrl?: string }) {
     this.client = new NoirAgentClient(opts.rpcUrl ? { rpcUrl: opts.rpcUrl } : undefined);
     this.agent = keypairSigner(opts.agentSecret);
+    if (opts.expectedAgentPublicKey && this.agent.publicKey !== opts.expectedAgentPublicKey) {
+      throw new Error("AGENT_PUBLIC_KEY does not match the public key derived from AGENT_SECRET");
+    }
   }
 
   checkPayment(payout: Payout): Promise<PaymentCheck> {

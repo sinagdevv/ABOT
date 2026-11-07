@@ -23,7 +23,7 @@ export const env = {
     return required("AGENT_SECRET");
   },
   get agentPublicKey() {
-    return process.env.AGENT_PUBLIC_KEY ?? "";
+    return required("AGENT_PUBLIC_KEY");
   },
   /** The Noir device whose escrow funds payouts when a request doesn't name one explicitly. */
   get orgDeviceHash() {

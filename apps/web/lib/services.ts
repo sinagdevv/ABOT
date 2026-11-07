@@ -5,7 +5,7 @@ let noir: NoirService | null = null;
 let velo: VeloService | null = null;
 
 export function noirService(): NoirService {
-  if (!noir) noir = new NoirService({ agentSecret: env.agentSecret, rpcUrl: env.noirRpcUrl });
+  if (!noir) noir = new NoirService({ agentSecret: env.agentSecret, expectedAgentPublicKey: env.agentPublicKey, rpcUrl: env.noirRpcUrl });
   return noir;
 }
 

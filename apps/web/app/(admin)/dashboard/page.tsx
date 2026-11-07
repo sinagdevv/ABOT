@@ -19,15 +19,15 @@ export default function DashboardPage() {
   useEffect(() => { load(); }, []);
   async function runSweep() { setRunning(true); try { await adminFetch("/api/agent/run", { method: "POST", body: "{}" }); await load(); } catch (err) { setError(err instanceof Error ? err.message : "Sweep failed"); } finally { setRunning(false); } }
   const counts = useMemo(() => (payouts ?? []).reduce<Record<string, number>>((acc, p) => { acc[p.status] = (acc[p.status] ?? 0) + 1; return acc; }, {}), [payouts]);
-  const authorized = (payouts ?? []).filter((p) => ["authorized", "claimed"].includes(p.status)).reduce((sum, p) => sum + BigInt(p.amountStroops), 0n);
+  const authorized = (payouts ?? []).filter((p) => ["authorized", "claimed"].includes(p.status) && Boolean(p.authorizationTxHash)).reduce((sum, p) => sum + BigInt(p.amountStroops), 0n);
   const attention = (payouts ?? []).filter((p) => ["needs_funding", "manual_review", "failed"].includes(p.status));
   const journey = useMemo(() => {
     const statuses = new Set((payouts ?? []).map((p) => p.status));
     return {
       approved: statuses.size > 0,
       checked: ["needs_funding", "authorizing", "manual_review", "authorized", "claimed", "failed"].some((status) => statuses.has(status)),
-      authorized: ["authorized", "claimed"].some((status) => statuses.has(status)),
-      claimed: statuses.has("claimed"),
+      authorized: (payouts ?? []).some((p) => ["authorized", "claimed"].includes(p.status) && Boolean(p.authorizationTxHash)),
+      claimed: (payouts ?? []).some((p) => p.status === "claimed" && Boolean(p.claimTxHash)),
     };
   }, [payouts]);
   return <div><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><PageHeader title="Good morning, operator." description="A measured view of approved assistance moving through ABOT." /><div className="flex gap-2"><button onClick={load} aria-label="Refresh dashboard" className="flex items-center gap-2 rounded-xl border border-mist bg-white px-3 py-2 text-sm text-ink hover:bg-mist/40"><RefreshCw size={14} /> Refresh</button><button onClick={runSweep} disabled={running} className="flex items-center gap-2 rounded-xl bg-emerald px-3 py-2 text-sm font-semibold text-warm hover:bg-emerald/90 disabled:opacity-50"><Play size={14} /> {running ? "Running…" : demo ? "Simulate evaluation" : "Run sweep"}</button></div></div>

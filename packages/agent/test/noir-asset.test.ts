@@ -1,7 +1,7 @@
 import { Asset, Keypair, Networks } from "@stellar/stellar-sdk";
 import { toCall as noirToCall } from "@noirx402/agent-sdk";
 import { describe, expect, it } from "vitest";
-import { NATIVE_XLM_SAC, toNoirAsset } from "../src/noir-service";
+import { NATIVE_XLM_SAC, NoirService, toNoirAsset } from "../src/noir-service";
 
 describe("Noir asset boundary", () => {
   it("maps native XLM to the Testnet SAC contract address", () => {
@@ -24,5 +24,11 @@ describe("Noir asset boundary", () => {
       amount: 10_000_000n,
       nonce: 1n,
     })).not.toThrow();
+  });
+
+  it("fails closed when the configured agent identity does not match the secret", () => {
+    expect(() => new NoirService({ agentSecret: Keypair.random().secret(), expectedAgentPublicKey: Keypair.random().publicKey() })).toThrow(
+      "AGENT_PUBLIC_KEY does not match",
+    );
   });
 });
