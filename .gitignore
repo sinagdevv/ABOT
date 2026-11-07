@@ -13,3 +13,5 @@ coverage/
 .vercel/
 supabase/.branches/
 supabase/.temp/
+deliverables/
+video/public/audio/
