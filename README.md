@@ -160,6 +160,10 @@ See [`.env.example`](.env.example) for the full list with descriptions:
 `VELO_API_KEY`, `VELO_WEBHOOK_SECRET`, `VELO_ENVIRONMENT`, `VELO_BASE_URL`,
 `VELO_FUNDING_ASSET`, `NEXT_PUBLIC_APP_URL`.
 
+The server also accepts the Vercel Supabase integration names
+`NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SECRET_KEY` for the URL and server-only
+database key respectively; neither secret is exposed to the browser.
+
 ## Blockers / what's left
 
 The public Vercel deployment is live and its public pages are reachable. The
@@ -167,8 +171,10 @@ following hosted/provider checks remain unverified in this release pass:
 
 - **Supabase**: schema is written and the query layer is typed against it
   (`apps/web/lib/database.types.ts`), but this release pass did not exercise a
-  hosted database or authenticated production read. Apply the migrations and
-  verify `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` in the deployment.
+  hosted database or authenticated production read. The production Vercel
+  integration has the equivalent `NEXT_PUBLIC_SUPABASE_URL` /
+  `SUPABASE_SECRET_KEY` names, which the server now accepts. Apply the
+  migrations and verify the authenticated read before claiming runtime proof.
 - **Velo**: integration code, signed webhook checks, retrieved-intent status
   verification, and amount/asset correlation are complete. No deployed checkout
   or authenticated webhook delivery was created in this release pass.

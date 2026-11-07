@@ -1,6 +1,7 @@
-function required(name: string): string {
-  const value = process.env[name]?.trim();
-  if (!value) throw new Error(`Missing required env var: ${name}`);
+function required(...names: string[]): string {
+  const name = names.find((candidate) => process.env[candidate]?.trim());
+  const value = name ? process.env[name]?.trim() : undefined;
+  if (!name || !value) throw new Error(`Missing required env var: ${names.join(" or ")}`);
   if (/replace_with|xxxx\.supabase\.co|tk_test_replace_me/i.test(value)) {
     throw new Error(`Placeholder value is not allowed for env var: ${name}`);
   }
@@ -10,10 +11,10 @@ function required(name: string): string {
 /** Lazily read so a missing var only breaks the route that needs it, not the whole build. */
 export const env = {
   get supabaseUrl() {
-    return required("SUPABASE_URL");
+    return required("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL");
   },
   get supabaseServiceRoleKey() {
-    return required("SUPABASE_SERVICE_ROLE_KEY");
+    return required("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY");
   },
   get adminApiToken() {
     return required("ADMIN_API_TOKEN");
