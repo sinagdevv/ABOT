@@ -28,7 +28,8 @@ export async function setAdminToken(token: string) {
 }
 
 export async function clearAdminSession() {
-  await fetch("/api/admin/session", { method: "DELETE", credentials: "same-origin" });
+  const res = await fetch("/api/admin/session", { method: "DELETE", credentials: "same-origin" });
+  if (!res.ok) throw new Error("Unable to end the live session. Try again.");
   window.sessionStorage.removeItem(SESSION_KEY);
   window.localStorage.setItem("abot_mode", "demo");
   window.dispatchEvent(new Event(MODE_EVENT));

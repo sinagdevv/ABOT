@@ -14,6 +14,7 @@ export async function POST(request: Request) {
   return Response.json({ ok: true }, { headers: { "Set-Cookie": `${COOKIE}=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=3600${secure}` } });
 }
 
-export async function DELETE() {
-  return Response.json({ ok: true }, { headers: { "Set-Cookie": `${COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0` } });
+export async function DELETE(request: Request) {
+  const secure = new URL(request.url).protocol === "https:" ? "; Secure" : "";
+  return Response.json({ ok: true }, { headers: { "Set-Cookie": `${COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${secure}` } });
 }
