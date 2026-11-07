@@ -39,13 +39,14 @@ twice.
 ## What's real today
 A live Testnet run of the entire Noir lifecycle (register, fund, authorize,
 claim) with confirmed, independently verifiable transaction hashes — see
-`docs/testnet-evidence.md`. The decision engine, state machine, and
+`docs/testnet-evidence.md`. The public Vercel deployment and anonymous route
+boundary are reachable. The decision engine, state machine, and
 duplicate-payment protection are unit-tested. The operator screens, read-only
 DEMO MODE, server-side admin session bridge, and wallet-signed claim boundary
-are built. Hosted Supabase/Vercel runtime proof remains blocked by missing real
-deployment configuration.
+are built. Hosted Supabase, authenticated runtime, Velo checkout/webhook, and
+recipient-wallet settlement proof remain unverified in this release pass.
 
 ## What's next
-A linked Vercel project plus real Supabase, Noir, Velo, and admin configuration
-turn this from a verified local build into a public, running demo — the code and
-schema are already there to support it (see README → Blockers).
+Real Supabase, Noir, Velo, and admin configuration plus a compatible recipient
+wallet complete the hosted authenticated demo; the public read-only demo is
+already available at `https://abot-web.vercel.app/` (see README → Blockers).

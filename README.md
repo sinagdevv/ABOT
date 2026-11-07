@@ -11,9 +11,9 @@ autonomously — funding, authorizing, and auditing every transfer through
 ## Links
 
 - Repo: this one (`feat/abot-hackathon-mvp` branch)
-- Live deployment: **not yet deployed** — the authenticated Vercel account has
-  no ABOT-linked project, and local Supabase/admin/Noir values are placeholders;
-  see [Blockers](#blockers--whats-left) below.
+- Live deployment: [abot-web.vercel.app](https://abot-web.vercel.app/) — public
+  pages and the unauthenticated API boundary were checked on 2026-11-07; hosted
+  authenticated/provider flows remain explicitly separated below.
 - Testnet proof: [`docs/testnet-evidence.md`](docs/testnet-evidence.md) — real,
   confirmed Testnet transaction hashes for the full Noir lifecycle.
 - Demo script / pitch notes: [`docs/demo-script.md`](docs/demo-script.md),
@@ -161,29 +161,27 @@ See [`.env.example`](.env.example) for the full list with descriptions:
 
 ## Blockers / what's left
 
-This execution environment has no Supabase project, Vercel account, or Velo
-API key configured, so the following are implemented and tested but not yet
-exercised against hosted infrastructure:
+The public Vercel deployment is live and its public pages are reachable. The
+following hosted/provider checks remain unverified in this release pass:
 
 - **Supabase**: schema is written and the query layer is typed against it
-  (`apps/web/lib/database.types.ts`), but there's no hosted project to run
-  `supabase db push` against, and the local Docker stack couldn't verify it
-  here because Docker Desktop's engine wasn't running. Create a project,
-  run the migration in `supabase/migrations/0001_init.sql`, and fill in
-  `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`.
+  (`apps/web/lib/database.types.ts`), but this release pass did not exercise a
+  hosted database or authenticated production read. Apply the migrations and
+  verify `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` in the deployment.
 - **Velo**: integration code, signed webhook checks, retrieved-intent status
-  verification, and amount/asset correlation are complete. The local Velo key
-  is present, but Supabase placeholders prevent the authenticated app route from
-  being exercised; no checkout was created in this release pass.
-- **Deploy**: Vercel CLI authentication is available, but no ABOT project is
-  linked in the account. The Hobby-unsupported 15-minute cron was removed;
-  deploy only after linking a project, adding real env values, and configuring a
-  daily external scheduler or secured manual trigger.
-- **Screenshots**: pending a deployed/running instance to capture from.
+  verification, and amount/asset correlation are complete. No deployed checkout
+  or authenticated webhook delivery was created in this release pass.
+- **Deploy**: the existing Vercel project serves the public site. The
+  Hobby-unsupported 15-minute cron was removed; use a daily external scheduler
+  or the secured manual trigger with `CRON_SECRET`.
+- **Browser QA**: anonymous route checks passed, but browser automation was
+  unavailable in this environment, so viewport and click-through evidence is
+  not claimed here.
 
 The decision engine, state machine, idempotency and concurrency protections,
-and Noir Testnet integration are implemented; hosted database, Velo checkout,
-and deployment verification remain environment-dependent.
+and Noir Testnet integration are implemented; authenticated hosted database,
+Velo checkout/webhook delivery, and recipient-wallet settlement remain
+environment-dependent.
 
 ## Next steps
 
