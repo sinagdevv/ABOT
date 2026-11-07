@@ -4,11 +4,22 @@ import {
   type NoirSigner,
   type PaymentCheck,
 } from "@noirx402/agent-sdk";
+import { Asset, Networks, StrKey } from "@stellar/stellar-sdk";
 import type { Payout } from "@abot/shared";
 
 export interface AuthorizeResult {
   txHash: string;
   nonce: string;
+}
+
+export const NATIVE_XLM_SAC = Asset.native().contractId(Networks.TESTNET);
+
+/** Persist business asset codes, but give Noir the Testnet SAC address it serializes as an Address. */
+export function toNoirAsset(asset: string): string {
+  const normalized = asset.trim();
+  if (normalized === "XLM") return NATIVE_XLM_SAC;
+  if (StrKey.isValidContract(normalized)) return normalized;
+  throw new Error(`unsupported Noir asset identifier: ${asset}`);
 }
 
 /** Thin wrapper over NoirAgentClient scoped to ABOT's payout flow. The agent key signs server-side only. */
@@ -25,7 +36,7 @@ export class NoirService {
     return this.client.checkPayment({
       deviceHash: payout.deviceHash,
       agent: this.agent.publicKey,
-      asset: payout.asset,
+      asset: toNoirAsset(payout.asset),
       amount: payout.amountStroops,
     });
   }
@@ -44,7 +55,7 @@ export class NoirService {
       agent: this.agent,
       deviceHash: payout.deviceHash,
       merchant: payout.recipientAddress,
-      asset: payout.asset,
+      asset: toNoirAsset(payout.asset),
       amount: payout.amountStroops,
       nonce,
     });
@@ -52,14 +63,14 @@ export class NoirService {
   }
 
   claim(merchant: NoirSigner, token: string): Promise<{ hash: string }> {
-    return this.client.claim({ merchant, token });
+    return this.client.claim({ merchant, token: toNoirAsset(token) });
   }
 
   submitClaim(signedTxXdr: string, token: string): Promise<string> {
-    return this.client.submit(signedTxXdr, { kind: "claim", token });
+    return this.client.submit(signedTxXdr, { kind: "claim", token: toNoirAsset(token) });
   }
 
   prepareClaim(source: string, token: string): Promise<string> {
-    return this.client.prepare(source, { kind: "claim", token });
+    return this.client.prepare(source, { kind: "claim", token: toNoirAsset(token) });
   }
 }
