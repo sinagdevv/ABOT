@@ -1,0 +1,24 @@
+{
+  "name": "abot-demo-film",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "audio": "node scripts/generate-audio.mjs",
+    "check": "tsc --noEmit",
+    "render:sample": "remotion render src/index.tsx ABOTHackathonFilm deliverables/sample.mp4 --frames=0-899 --concurrency=2",
+    "render": "remotion render src/index.tsx ABOTHackathonFilm deliverables/ABOT_Hackathon_Demo_120s.mp4 --concurrency=8"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.238",
+    "@remotion/media-utils": "^4.0.238",
+    "@remotion/renderer": "^4.0.238",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.238"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.7.3"
+  }
+}
